@@ -674,7 +674,6 @@
         <div class="export-buttons">
             <button class="export-btn" onclick="saveProgress()">💾 Save Progress</button>
             <button class="export-btn" onclick="loadProgress()">📥 Load Progress</button>
-            <button class="capacity-btn" onclick="openCapacityModal()">⚙️ Set Sprint Capacity</button>
         </div>
         <div style="margin-top: 10px;">
             <a href="https://docs.google.com/spreadsheets/d/1xfo1pvFektnw8IGGdYaq55Zeu-h5n9wbOS-e3qRhNBg/edit?gid=1521695536#gid=1521695536" target="_blank" class="export-btn" style="text-decoration: none; display: inline-block;">📄 SFonSF-DET TestExpert Requirements_SSOT</a>
@@ -721,7 +720,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 1</div>
-                        <div class="sprint-capacity" id="capacity-sprint-1">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-1">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-1">0</span>
                 </div>
@@ -732,7 +731,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 2</div>
-                        <div class="sprint-capacity" id="capacity-sprint-2">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-2">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-2">0</span>
                 </div>
@@ -743,7 +742,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 3</div>
-                        <div class="sprint-capacity" id="capacity-sprint-3">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-3">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-3">0</span>
                 </div>
@@ -754,7 +753,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 4</div>
-                        <div class="sprint-capacity" id="capacity-sprint-4">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-4">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-4">0</span>
                 </div>
@@ -765,7 +764,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 5</div>
-                        <div class="sprint-capacity" id="capacity-sprint-5">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-5">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-5">0</span>
                 </div>
@@ -776,7 +775,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 6</div>
-                        <div class="sprint-capacity" id="capacity-sprint-6">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-6">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-6">0</span>
                 </div>
@@ -787,7 +786,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 7</div>
-                        <div class="sprint-capacity" id="capacity-sprint-7">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-7">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-7">0</span>
                 </div>
@@ -798,7 +797,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 8</div>
-                        <div class="sprint-capacity" id="capacity-sprint-8">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-8">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-8">0</span>
                 </div>
@@ -809,7 +808,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 9</div>
-                        <div class="sprint-capacity" id="capacity-sprint-9">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-9">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-9">0</span>
                 </div>
@@ -820,7 +819,7 @@
                 <div class="sprint-header">
                     <div>
                         <div>Sprint 10</div>
-                        <div class="sprint-capacity" id="capacity-sprint-10">0 / 15 points</div>
+                        <div class="sprint-capacity" style="display: none;" id="capacity-sprint-10">0 / 15 points</div>
                     </div>
                     <span class="sprint-count" id="count-sprint-10">0</span>
                 </div>
@@ -1131,15 +1130,6 @@
                         ${Array.from({length: 60}, (_, i) => i + 1).map(num =>
                             `<option value="${num}" ${currentPriority == num ? 'selected' : ''}>#${num}</option>`
                         ).join('')}
-                    </select>
-                    <select class="inline-select" style="background: #17a2b8; color: white; border-color: #17a2b8;" onchange="updateStoryPoints('${req.id}', this.value)" onclick="event.stopPropagation()">
-                        <option value="1" ${currentPoints === 1 ? 'selected' : ''}>1 pt</option>
-                        <option value="2" ${currentPoints === 2 ? 'selected' : ''}>2 pts</option>
-                        <option value="3" ${currentPoints === 3 ? 'selected' : ''}>3 pts</option>
-                        <option value="5" ${currentPoints === 5 ? 'selected' : ''}>5 pts</option>
-                        <option value="8" ${currentPoints === 8 ? 'selected' : ''}>8 pts</option>
-                        <option value="13" ${currentPoints === 13 ? 'selected' : ''}>13 pts</option>
-                        <option value="21" ${currentPoints === 21 ? 'selected' : ''}>21 pts</option>
                     </select>
                 `;
 
