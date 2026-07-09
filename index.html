@@ -1397,9 +1397,6 @@
                     const stageColor = stageBadgeColors[req.stage] || { bg: '#e9ecef', text: '#495057' };
                     tagsHTML += `<span class="sprint-card-tag" style="background: ${stageColor.bg}; color: ${stageColor.text};">${req.stage.toUpperCase().replace('-', ' ')}</span>`;
 
-                    // Story points
-                    tagsHTML += `<span class="sprint-card-tag" style="background: #17a2b8; color: white;">${currentPoints} pts</span>`;
-
                     // Priority ranking
                     if (currentPriority) {
                         tagsHTML += `<span class="sprint-card-tag" style="background: #6c757d; color: white;">#${currentPriority}</span>`;
