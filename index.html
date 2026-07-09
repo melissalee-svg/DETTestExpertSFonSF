@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DET Testing Expert - Requirements Sprint Planner</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #1a1a1a;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            padding: 10px 20px;
+            border: 2px solid #0066cc;
+            background: white;
+            color: #0066cc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .view-btn.active {
+            background: #0066cc;
+            color: white;
+        }
+
+        .view-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Requirements List View */
+        .requirements-list {
+            display: none;
+        }
+
+        .requirements-list.active {
+            display: block;
+        }
+
+        .req-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #ddd;
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .req-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .req-card.dragging {
+            opacity: 0.5;
+        }
+
+        .req-card.stage-1 {
+            border-left-color: #17a2b8;
+        }
+
+        .req-card.stage-2 {
+            border-left-color: #28a745;
+        }
+
+        .req-card.stage-3 {
+            border-left-color: #6f42c1;
+        }
+
+        .req-card.nfr {
+            border-left-color: #9b59b6;
+        }
+
+        .req-id {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0066cc;
+            margin-bottom: 8px;
+        }
+
+        .req-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .req-story {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 12px;
+            padding-left: 15px;
+            border-left: 2px solid #e9ecef;
+        }
+
+        .req-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.quick-win { background: #d4edda; color: #155724; }
+        .badge.strategic { background: #cce5ff; color: #004085; }
+        .badge.fill-in { background: #fff3cd; color: #856404; }
+        .badge.deprioritize { background: #f8d7da; color: #721c24; }
+        .badge.stage-1 { background: #d1ecf1; color: #0c5460; }
+        .badge.stage-2 { background: #d4edda; color: #155724; }
+        .badge.stage-3 { background: #e7e3f5; color: #4a1f7a; }
+        .badge.nfr { background: #9b59b6; color: white; }
+        .badge.north-star { background: #ff6b6b; color: white; }
+
+        .badge.custom-tag {
+            position: relative;
+            padding-right: 24px;
+        }
+
+        .badge.custom-tag .remove-tag {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-weight: bold;
+            color: inherit;
+        }
+
+        .badge.team-tag {
+            background: #6c757d;
+            color: white;
+        }
+
+        .add-tag-btn, .assign-team-btn {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #e9ecef;
+            color: #495057;
+            cursor: pointer;
+            border: 1px dashed #adb5bd;
+        }
+
+        .add-tag-btn:hover, .assign-team-btn:hover {
+            background: #dee2e6;
+        }
+
+        .inline-select {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            background: white;
+            cursor: pointer;
+            margin: 0 4px;
+        }
+
+        .inline-select:focus {
+            outline: 2px solid #0066cc;
+        }
+
+        /* Sprint Board View */
+        .sprint-board {
+            display: none;
+        }
+
+        .sprint-board.active {
+            display: block;
+        }
+
+        .sprint-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .sprint-controls button, .capacity-btn {
+            padding: 8px 16px;
+            border: none;
+            background: #0066cc;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .sprint-controls button:hover, .capacity-btn:hover {
+            background: #0052a3;
+        }
+
+        .sprint-board-container {
+            display: flex;
+            gap: 20px;
+            min-height: calc(100vh - 220px);
+            align-items: stretch;
+        }
+
+        .backlog-section {
+            width: 350px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sprint-column.backlog {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .backlog-items {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+            max-height: calc(100vh - 320px);
+        }
+
+        .sprint-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            align-content: start;
+        }
+
+        .sprint-column {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sprint-header {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sprint-count {
+            font-size: 12px;
+            background: #0066cc;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .sprint-capacity {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .sprint-capacity.over-capacity {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .sprint-items {
+            flex: 1;
+            min-height: 100px;
+            overflow-y: auto;
+        }
+
+        .backlog-items::-webkit-scrollbar,
+        .sprint-items::-webkit-scrollbar,
+        .sprint-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .backlog-items::-webkit-scrollbar-track,
+        .sprint-items::-webkit-scrollbar-track,
+        .sprint-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .backlog-items::-webkit-scrollbar-thumb,
+        .sprint-items::-webkit-scrollbar-thumb,
+        .sprint-grid::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .backlog-items::-webkit-scrollbar-thumb:hover,
+        .sprint-items::-webkit-scrollbar-thumb:hover,
+        .sprint-grid::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .sprint-column.drag-over {
+            background: #e7f3ff;
+            border: 2px dashed #0066cc;
+        }
+
+        .sprint-req-card {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid #0066cc;
+            cursor: move;
+            font-size: 13px;
+        }
+
+        .sprint-req-card:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .sprint-req-card.dragging {
+            opacity: 0.5;
+        }
+
+        .sprint-req-id {
+            font-weight: 600;
+            color: #0066cc;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .sprint-req-title {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 4px;
+            color: #333;
+            line-height: 1.3;
+        }
+
+        .sprint-req-story {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+            margin-bottom: 6px;
+            font-style: italic;
+        }
+
+        .sprint-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .sprint-card-tag {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .sprint-card-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .mini-btn {
+            font-size: 10px;
+            padding: 3px 6px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .mini-btn:hover {
+            background: #e9ecef;
+            border-color: #0066cc;
+            color: #0066cc;
+        }
+
+        .status-select {
+            font-size: 10px;
+            padding: 3px 6px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .status-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .status-not-started {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .status-in-progress {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .status-blocked {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .status-deferred {
+            background: #fff3cd;
+            color: #997404;
+        }
+
+        .status-completed {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .sprint-req-id {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0066cc;
+            margin-bottom: 4px;
+        }
+
+        .sprint-req-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal-buttons .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+
+        .modal-buttons .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .search-box {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .filter-btn.active {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            border: 2px solid #28a745;
+            background: white;
+            color: #28a745;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .export-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .team-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .team-option {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .team-option:hover {
+            background: #e9ecef;
+        }
+
+        .team-option.selected {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+
+        .capacity-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .capacity-input label {
+            min-width: 80px;
+            font-weight: 600;
+        }
+
+        .capacity-input input {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 DET Testing Expert - Requirements Sprint Planner</h1>
+        <p style="margin: 10px 0; color: #666;">
+            Interactive dashboard: Add custom tags, assign requirements to sprints, manage teams, and track capacity
+        </p>
+
+        <div class="view-toggle">
+            <button class="view-btn active" onclick="switchView('list')">📋 Requirements List</button>
+            <button class="view-btn" onclick="switchView('board')">🗂️ Sprint Board</button>
+        </div>
+
+        <div class="export-buttons">
+            <button class="export-btn" onclick="saveProgress()">💾 Save Progress</button>
+            <button class="export-btn" onclick="loadProgress()">📥 Load Progress</button>
+            <button class="capacity-btn" onclick="openCapacityModal()">⚙️ Set Sprint Capacity</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <a href="https://docs.google.com/spreadsheets/d/1xfo1pvFektnw8IGGdYaq55Zeu-h5n9wbOS-e3qRhNBg/edit?gid=1521695536#gid=1521695536" target="_blank" class="export-btn" style="text-decoration: none; display: inline-block;">📄 SFonSF-DET TestExpert Requirements_SSOT</a>
+        </div>
+    </div>
+
+    <!-- Requirements List View -->
+    <div class="requirements-list active" id="listView">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search requirements..." onkeyup="filterRequirements()">
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterByCategory('all')">All (77)</button>
+            <button class="filter-btn" onclick="filterByCategory('stage-1')">Stage 1</button>
+            <button class="filter-btn" onclick="filterByCategory('stage-2')">Stage 2</button>
+            <button class="filter-btn" onclick="filterByCategory('stage-3')">Stage 3</button>
+        </div>
+
+        <div id="requirementsList"></div>
+    </div>
+
+    <!-- Sprint Board View -->
+    <div class="sprint-board" id="boardView">
+        <div class="sprint-controls">
+            <button onclick="clearAllSprints()">🗑️ Clear All Sprints</button>
+            <button onclick="autoAssignSprints()">🤖 Auto-Assign by Priority</button>
+        </div>
+
+        <div class="sprint-board-container">
+            <div class="backlog-section">
+                <div class="sprint-column backlog" data-sprint="backlog" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                    <div class="sprint-header">
+                        <span>📦 Backlog</span>
+                        <span class="sprint-count" id="count-backlog">0</span>
+                    </div>
+                    <div class="backlog-items" id="sprint-backlog"></div>
+                </div>
+            </div>
+
+            <div class="sprint-grid">
+
+            <div class="sprint-column" data-sprint="sprint-1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 1</div>
+                        <div class="sprint-capacity" id="capacity-sprint-1">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-1">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-1"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-2" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 2</div>
+                        <div class="sprint-capacity" id="capacity-sprint-2">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-2">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-2"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-3" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 3</div>
+                        <div class="sprint-capacity" id="capacity-sprint-3">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-3">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-3"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-4" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 4</div>
+                        <div class="sprint-capacity" id="capacity-sprint-4">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-4">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-4"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-5" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 5</div>
+                        <div class="sprint-capacity" id="capacity-sprint-5">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-5">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-5"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-6" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 6</div>
+                        <div class="sprint-capacity" id="capacity-sprint-6">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-6">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-6"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-7" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 7</div>
+                        <div class="sprint-capacity" id="capacity-sprint-7">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-7">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-7"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-8" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 8</div>
+                        <div class="sprint-capacity" id="capacity-sprint-8">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-8">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-8"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-9" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 9</div>
+                        <div class="sprint-capacity" id="capacity-sprint-9">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-9">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-9"></div>
+            </div>
+
+            <div class="sprint-column" data-sprint="sprint-10" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="sprint-header">
+                    <div>
+                        <div>Sprint 10</div>
+                        <div class="sprint-capacity" id="capacity-sprint-10">0 / 15 points</div>
+                    </div>
+                    <span class="sprint-count" id="count-sprint-10">0</span>
+                </div>
+                <div class="sprint-items" id="sprint-sprint-10"></div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tag Modal -->
+    <div class="modal" id="tagModal">
+        <div class="modal-content">
+            <h2>Add Custom Tag</h2>
+            <input type="text" id="tagInput" placeholder="Enter tag name..." />
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeTagModal()">Cancel</button>
+                <button class="btn-primary" onclick="addTag()">Add Tag</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Team Modal -->
+    <div class="modal" id="teamModal">
+        <div class="modal-content">
+            <h2>Assign Team</h2>
+            <p style="color: #666;">Select a team for this requirement:</p>
+            <div class="team-list" id="teamList"></div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn-secondary" onclick="closeTeamModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sprint Capacity Modal -->
+    <div class="modal" id="capacityModal">
+        <div class="modal-content">
+            <h2>Set Sprint Capacity</h2>
+            <p style="color: #666;">Configure story points capacity for each sprint:</p>
+            <div id="capacityInputs"></div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn-secondary" onclick="closeCapacityModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveCapacity()">Save Capacity</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // All Requirements Data
+        const requirements = [
+            // Stage 1
+            {id: "REQ-1.1", title: "Test Scenario Repository", stage: "stage-1", priority: "quick-win", story: "As a tester I want to store and manage my test scenarios so that I can be responsible for testing validations", storyPoints: 5},
+            {id: "REQ-1.2", title: "Test Plan Sign-Off Validation", stage: "stage-1", priority: "deprioritize", story: "As a Test Leader I want to see test plans that are signed off so that I can validate the testing approach is aligned with the Product Vision and Goals", storyPoints: 3},
+            {id: "REQ-1.3", title: "Test Scope Association", stage: "stage-1", priority: "fill-in", story: "As a Tester I want to be able to associate all the test suites w/ the scenario count to a Project so that I can depict the testing scope on the related project", storyPoints: 2},
+            {id: "REQ-1.4", title: "SOX Control Mapping", stage: "stage-1", priority: "fill-in", story: "As a SOX tester I want to ability to map a test scenario to SOX Controls so that I can show what test scenarios are mapped to SOX controls", storyPoints: 3},
+            {id: "REQ-1.5", title: "Persona-Based Access Validation", stage: "stage-1", priority: "strategic", story: "As a tester I want to leverage AI to leverage a personas behavior so that I can efficiently validate persona access", storyPoints: 8},
+            {id: "REQ-1.6", title: "Pre-Test Access Validation", stage: "stage-1", priority: "strategic", story: "As a tester I want the ability to validate my access access, profile, FLS, perms before testing so that I can immediately start testing", storyPoints: 5},
+            {id: "REQ-1.7", title: "Test Data Identification", stage: "stage-1", priority: "quick-win", story: "As a UAT tester I want the Ability to identify and track test data being used for tests (e.g. which account should be used, which products, etc) so I can easily find what test data to use", storyPoints: 3},
+            {id: "REQ-1.8", title: "Sequential E2E Test Design", stage: "stage-1", priority: "strategic", story: "As a tester I want the ability to build out an end to end test sequentially and assign to the next tester so that I can properly design an end to end scenario", storyPoints: 8},
+            {id: "REQ-1.9", title: "Shared Test Repository", stage: "stage-1", priority: "quick-win", story: "As a AI Tool I want our business testers and DET testers to be able to share, review and add test scenarios in a central location so that a test repository can be utilized", storyPoints: 3},
+            {id: "REQ-1.10", title: "Test Step Assignment", stage: "stage-1", priority: "strategic", story: "As a Business Testing Facilitator I want to assign specific test steps to a different owner in one test scenario so I can help manage test case assignment and easily see dependent test cases", storyPoints: 5},
+
+            // Stage 2
+            {id: "REQ-2.1", title: "Sequential E2E Test Execution", stage: "stage-2", priority: "strategic", story: "As a tester I want the ability to execute an end to end test sequentially and notify the next tester so that I can properly execute a sequential end to end scenario", storyPoints: 8},
+            {id: "REQ-2.2", title: "Upstream Test Notifications", stage: "stage-2", priority: "strategic", story: "As an assigned downstream tester I want to notified when the upstream tester is notified so that I know when I can start my test scenario", storyPoints: 5},
+            {id: "REQ-2.3", title: "Test Queue Management", stage: "stage-2", priority: "strategic", story: "As a AI Tool I want to have a mechanism to place test scenarios in a queue so that testers can grab open test cases", storyPoints: 5},
+            {id: "REQ-2.4", title: "Automation Results Tracking", stage: "stage-2", priority: "strategic", story: "As a Nui 2.0 user I want to see my automation results so that I can track them in one place", storyPoints: 5},
+            {id: "REQ-2.5", title: "Duplicate Bug Detection", stage: "stage-2", priority: "strategic", story: "As a tester I want to be notified that the test scenario already has a bug associated so that duplicate bugs aren't added", storyPoints: 5},
+            {id: "REQ-2.6", title: "Bulk Test Scenario Updates", stage: "stage-2", priority: "quick-win", story: "As a tester I want to bulk update my test scenarios so that I can easily update the status in one place", storyPoints: 3},
+            {id: "REQ-2.7", title: "Test Date Tracking", stage: "stage-2", priority: "quick-win", story: "As a tester I want to add a start and end date to a test scenario so that I can easily pull a report of my assigned test cases by date", storyPoints: 2},
+            {id: "REQ-2.8", title: "Enhanced Test Status Options", stage: "stage-2", priority: "quick-win", story: "As a UAT facilitator or DET scrum team I want to status a test scenario to include Not Started, In Progress, Passed, Failed, Ready for Retest, Pending Prior Step Completion", storyPoints: 2},
+            {id: "REQ-2.9", title: "Test Failure Triage", stage: "stage-2", priority: "strategic", story: "As a Tester I want to have the ability to triage a test case failure and document the failure reason so that I can track whom is performing the analysis and have it recorded for reporting purposes", storyPoints: 5},
+            {id: "REQ-2.10", title: "Defect Logging from Test Case", stage: "stage-2", priority: "quick-win", story: "As a tester I need the ability to log a defect and comment appropriately directly from a test case so there can be traceability to the bug and test scenario", storyPoints: 3},
+            {id: "REQ-2.11", title: "Conditional Triage Process", stage: "stage-2", priority: "fill-in", story: "As a tester/ triage owner I want to see the failure triage process only if the scenario is failed so that users only use this if there is a failure", storyPoints: 2},
+            {id: "REQ-2.12", title: "Defect Triage Management", stage: "stage-2", priority: "deprioritize", story: "As a UAT facilitator or DET Scrum Team I want the ability to manage triage for identified defects, including categorization of defects, assignment to owners, and documentation of triage status updates so I can easily keep track of all the activity during testing", storyPoints: 5},
+            {id: "REQ-2.13", title: "Failure Categorization", stage: "stage-2", priority: "fill-in", story: "As a UAT lead and triage owner I want to have a category to properly determine the reason the case was created so that I can produce metrics and trends around UAT test failures", storyPoints: 2},
+            {id: "REQ-2.14", title: "Attachment Support", stage: "stage-2", priority: "quick-win", story: "As a UAT tester I need the ability to add attachments to defects/test cases (i.e. screenshots of errors) so I can easily communicate with DET any failures", storyPoints: 3},
+            {id: "REQ-2.15", title: "Downstream Impact Analysis", stage: "stage-2", priority: "strategic", story: "As a PM/Tester I need the ability to see all subsequently impacted test cases resulting from a Blocked Test Case so that I can see how impactful a failed/blocked scenario", storyPoints: 8},
+            {id: "REQ-2.16", title: "Self-Service Dashboards", stage: "stage-2", priority: "strategic", story: "As a PM/Tester/Executive I need self-service access to curated dashboards/reports/management chain reporting to see test execution progress/burn downs/bug statistics/tester completion", storyPoints: 8},
+            {id: "REQ-2.17", title: "Custom Reporting", stage: "stage-2", priority: "quick-win", story: "As tester I want to have access to custom and standard reports so that I can build a dashboard that shows testing activity", storyPoints: 3},
+            {id: "REQ-2.18", title: "Business System Integration", stage: "stage-2", priority: "deprioritize", story: "As a UAT Lead I want the data from UAT Tool data to integrate with the preferred business system so that reporting can be managed without manual intervention", storyPoints: 8},
+            {id: "REQ-2.19", title: "Test Sign-Off Tracking", stage: "stage-2", priority: "fill-in", story: "As a Test Leader, PO or TPM I want the ability to see all sign offs from testers so that I can validate all testing has been approved", storyPoints: 3},
+            {id: "REQ-2.20", title: "Priority Level Assignment", stage: "stage-2", priority: "quick-win", story: "As a tester I want to assign a priority level to each test case so that I can prioritize test execution", storyPoints: 2},
+            {id: "REQ-2.21", title: "Linear Data Mapping", stage: "stage-2", priority: "quick-win", story: "As a tester I want each test case to clearly indicate the corresponding Linear data it maps to so that I can maintain user story traceability", storyPoints: 2},
+            {id: "REQ-2.22", title: "Acceptance Criteria Reference", stage: "stage-2", priority: "quick-win", story: "As a tester I want each test case to explicitly reference the acceptance criteria it validates so that I can ensure acceptance criteria traceability", storyPoints: 2},
+            {id: "REQ-2.23", title: "Verify Prefix Naming", stage: "stage-2", priority: "quick-win", story: "As a tester I want to prefix all test scenario names with Verify so that there is consistency in scenario naming", storyPoints: 1},
+            {id: "REQ-2.24", title: "Test Case Categorization", stage: "stage-2", priority: "quick-win", story: "As a tester I want to categorize each test case as Regression, End to End, Sanity, UAT so that I can classify tests appropriately", storyPoints: 2},
+            {id: "REQ-2.25", title: "Input Traceability", stage: "stage-2", priority: "strategic", story: "As a tester I want to ensure every test case traces back to the provided inputs so that I have traceability to inputs", storyPoints: 3},
+            {id: "REQ-2.26", title: "Actual Result Field", stage: "stage-2", priority: "quick-win", story: "As a tester, I want to include an Actual Result field in the test case template so that I can document the actual outcome of the test", storyPoints: 2},
+            {id: "REQ-2.27", title: "Status Fields", stage: "stage-2", priority: "quick-win", story: "As a tester, I want to include a Status fields Not started, not started downstream, in progress, fail, blocked, retest, pass in the test case template so that I can track the progress of the test case", storyPoints: 2},
+            {id: "REQ-2.28", title: "Notes/Comments Section", stage: "stage-2", priority: "quick-win", story: "As a tester, I want to add a Notes/Comments section so that I can record additional observations or implementation details", storyPoints: 1},
+            {id: "REQ-2.29", title: "Test Data Section", stage: "stage-2", priority: "quick-win", story: "As a tester, I want to include a dedicated section specifying the required test data so that I know what data is needed for the test", storyPoints: 2},
+            {id: "REQ-2.30", title: "Comprehensive Coverage Generation", stage: "stage-2", priority: "strategic", story: "As a tester, I want the system to generate comprehensive test case coverage across all uploaded Linear issues, even when multiple are provided, so that no scenarios are missed", storyPoints: 8},
+            {id: "REQ-2.31", title: "Accurate Test Generation", stage: "stage-2", priority: "strategic", story: "As a tester, I want generated test cases to be consistent with requirements without false assumptions, so that test steps are accurate and executable", storyPoints: 5},
+            {id: "REQ-2.32", title: "Pull Request Input", stage: "stage-2", priority: "strategic", story: "As a tester, I want to be able to use the PR as an input, so that I can validate pull request data", storyPoints: 5},
+            {id: "REQ-2.33", title: "Mobile Test Generation", stage: "stage-2", priority: "strategic", story: "As a tester, I want mobile test cases to be generated so that I can test mobile scenarios", storyPoints: 8},
+            {id: "REQ-2.34", title: "Recording Input Support", stage: "stage-2", priority: "strategic", story: "As a tester I want the tool to allow recordings as the input automation so I can reference it to help create test cases", storyPoints: 5},
+            {id: "REQ-2.35", title: "Recording Output Capture", stage: "stage-2", priority: "strategic", story: "As a tester I want the tool to capture recordings as the output so I can have it available for traceability and bug mitigation", storyPoints: 5},
+
+            // Stage 3
+            {id: "REQ-3.1", title: "E2E Test Reuse", stage: "stage-3", priority: "strategic", story: "As a UAT Program I want to create efficiencies with testing and eliminate duplicate testing conducted during E2E so I can provide a list of all passed test scenarios to UAT testers", storyPoints: 8},
+            {id: "REQ-3.2", title: "Test Scenario Import", stage: "stage-3", priority: "quick-win", story: "As a UAT tester I need the ability to import test scenarios so I can easily ensure test scenarios that don't exist in the system can be added quickly without manual intervention", storyPoints: 3},
+            {id: "REQ-3.3", title: "Natural Language to Test Code", stage: "stage-3", priority: "strategic", story: "As a tester I want AI to generate executable test code from natural language test descriptions so that I can rapidly create automated tests without manual coding", storyPoints: 13},
+            {id: "REQ-3.4", title: "Reusable Test Code Libraries", stage: "stage-3", priority: "strategic", story: "As a test automation engineer I want AI to create reusable test code libraries from successful test patterns so that future tests can leverage proven components and reduce duplication", storyPoints: 8},
+            {id: "REQ-3.5", title: "Passed Test Code Generation", stage: "stage-3", priority: "strategic", story: "As an automation engineer I want AI to generate test code from manually passed test scenarios so that validated manual tests can be quickly automated", storyPoints: 8},
+            {id: "REQ-3.6", title: "Automated Broken Test Detection", stage: "stage-3", priority: "strategic", story: "As a test maintainer I want AI to automatically detect broken tests caused by application changes so that I can quickly identify maintenance needs without manual test run analysis", storyPoints: 8},
+            {id: "REQ-3.7", title: "UI Change Test Repair", stage: "stage-3", priority: "strategic", story: "As a tester I want AI to automatically fix tests broken by UI changes (selector updates, layout changes) so that I can maintain test stability without manual intervention", storyPoints: 13},
+            {id: "REQ-3.8", title: "Selector & Assertion Auto-Update", stage: "stage-3", priority: "strategic", story: "As a test maintainer I want AI to automatically update selectors and assertions when the application changes so that tests remain valid across application releases", storyPoints: 8},
+            {id: "REQ-3.9", title: "Context-Aware Test Execution", stage: "stage-3", priority: "strategic", story: "As a test execution system I want AI to adapt test execution based on runtime context and environment so that tests can handle environment variations without modification", storyPoints: 8},
+            {id: "REQ-3.10", title: "Cross-Version Test Compatibility", stage: "stage-3", priority: "deprioritize", story: "As a test suite owner I want AI to maintain test compatibility across different application versions so that tests work reliably in multiple environments without version-specific customization", storyPoints: 8},
+            {id: "REQ-3.11", title: "Continuous Test Improvement", stage: "stage-3", priority: "deprioritize", story: "As a quality engineer I want AI to continuously analyze and improve test effectiveness and efficiency so that the test suite becomes more robust and optimized over time", storyPoints: 8},
+
+            // North Star
+            {id: "REQ-NS-1", title: "Codegen & Self-Healing Loop", stage: "stage-3", priority: "north-star", story: "AI-authored scripts with auto-repair", storyPoints: 13},
+            {id: "REQ-NFR-1", title: "Security NFR", stage: "nfr", priority: "strategic", story: "Meet enterprise security standards", storyPoints: 8},
+            {id: "REQ-NFR-2", title: "Performance NFR", stage: "nfr", priority: "strategic", story: "Handle high-volume concurrent execution", storyPoints: 8},
+            {id: "REQ-NFR-3", title: "Accessibility NFR", stage: "nfr", priority: "strategic", story: "Fully accessible platform UI", storyPoints: 5},
+            {id: "REQ-NS-2", title: "Inner Loop Integration", stage: "stage-2", priority: "north-star", story: "Integrate with Developer Expert", storyPoints: 13},
+            {id: "REQ-NS-3", title: "Intelligent UI/API Toggle", stage: "stage-2", priority: "north-star", story: "Intelligently choose UI or API execution", storyPoints: 8},
+            {id: "REQ-NS-5", title: "Autonomous Bug Triage", stage: "stage-2", priority: "north-star", story: "Cognitive defect routing", storyPoints: 13},
+            {id: "REQ-NS-6", title: "Autonomous Test Health Monitoring", stage: "stage-2", priority: "north-star", story: "Live health dashboards with proactive repairs", storyPoints: 8},
+            {id: "REQ-NS-7", title: "Quality Context Management", stage: "stage-1", priority: "north-star", story: "Product & business context-driven coverage", storyPoints: 8},
+            {id: "REQ-NS-8", title: "On-Demand Regression Execution", stage: "stage-2", priority: "north-star", story: "Trigger regression suites on-demand", storyPoints: 5},
+            {id: "REQ-NS-9", title: "Test Expert on Build EP", stage: "stage-2", priority: "north-star", story: "Quality checks on builds automatically", storyPoints: 8},
+            {id: "REQ-NS-10", title: "Enhanced Test Case Traceability", stage: "stage-1", priority: "north-star", story: "Priority, story mapping, AC traceability", storyPoints: 5},
+            {id: "REQ-NS-11", title: "Test Case Execution Fields", stage: "stage-1", priority: "north-star", story: "Actual Result, Status, Notes fields", storyPoints: 3},
+            {id: "REQ-NS-12", title: "Mobile Test Case Generation", stage: "stage-1", priority: "north-star", story: "Generate mobile-specific test cases", storyPoints: 8},
+            {id: "REQ-NS-13", title: "Multi-Story Test Coverage", stage: "stage-1", priority: "north-star", story: "Consistent coverage for batched stories", storyPoints: 5},
+            {id: "REQ-NS-14", title: "Structured Clarification Questions", stage: "stage-1", priority: "north-star", story: "Questions organized by context", storyPoints: 5},
+            {id: "REQ-NS-15", title: "Pull Request as Test Input", stage: "stage-1", priority: "north-star", story: "Generate tests from PR changes", storyPoints: 8},
+            {id: "REQ-NS-16", title: "Test Strategy Format Options", stage: "stage-1", priority: "north-star", story: "Google Docs format option", storyPoints: 2},
+            {id: "REQ-NS-17", title: "Contextual Test Planning", stage: "stage-1", priority: "north-star", story: "Ask for context beyond GUS", storyPoints: 5},
+            {id: "REQ-NS-18", title: "Existing Test Suite Discovery", stage: "stage-1", priority: "north-star", story: "Ask about existing suites first", storyPoints: 3},
+            {id: "REQ-NS-19", title: "Structured Approval Evidence", stage: "stage-1", priority: "north-star", story: "Capture structured approval evidence", storyPoints: 3}
+        ];
+
+        const teams = [
+            "Stage 1 Team",
+            "Stage 2 Team",
+            "Stage 3 Team",
+            "Integration Team",
+            "Frontend Team",
+            "Backend Team",
+            "QA Team",
+            "DevOps Team"
+        ];
+
+        let currentFilter = 'all';
+        let currentReqId = null;
+        let customTags = {}; // {reqId: [tag1, tag2]}
+        let teamAssignments = {}; // {reqId: team}
+        let sprintAssignments = {}; // {reqId: sprintId}
+        let sprintCapacity = {}; // {sprintId: capacity}
+        let customStoryPoints = {}; // {reqId: points}
+        let priorityRanking = {}; // {reqId: number 1-60}
+        let requirementStatus = {}; // {reqId: status}
+
+        // Initialize sprint capacity with defaults
+        for (let i = 1; i <= 10; i++) {
+            sprintCapacity[`sprint-${i}`] = 15;
+        }
+
+        // Generate consistent color for a tag based on its name
+        function getTagColor(tagName) {
+            const colors = [
+                { bg: '#FF6B6B', text: '#FFF' }, // Red
+                { bg: '#4ECDC4', text: '#FFF' }, // Teal
+                { bg: '#45B7D1', text: '#FFF' }, // Blue
+                { bg: '#FFA07A', text: '#FFF' }, // Salmon
+                { bg: '#98D8C8', text: '#333' }, // Mint
+                { bg: '#F7DC6F', text: '#333' }, // Yellow
+                { bg: '#BB8FCE', text: '#FFF' }, // Purple
+                { bg: '#F8B739', text: '#333' }, // Orange
+                { bg: '#52B788', text: '#FFF' }, // Green
+                { bg: '#E85D75', text: '#FFF' }, // Pink
+                { bg: '#6C5CE7', text: '#FFF' }, // Indigo
+                { bg: '#00B894', text: '#FFF' }, // Emerald
+                { bg: '#FDCB6E', text: '#333' }, // Mustard
+                { bg: '#E17055', text: '#FFF' }, // Terracotta
+                { bg: '#74B9FF', text: '#333' }, // Sky Blue
+                { bg: '#A29BFE', text: '#FFF' }, // Periwinkle
+                { bg: '#FD79A8', text: '#FFF' }, // Rose
+                { bg: '#55EFC4', text: '#333' }, // Aqua
+                { bg: '#FF7675', text: '#FFF' }, // Coral
+                { bg: '#636E72', text: '#FFF' }  // Gray
+            ];
+
+            // Simple hash function for consistent colors
+            let hash = 0;
+            for (let i = 0; i < tagName.length; i++) {
+                hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const index = Math.abs(hash) % colors.length;
+            return colors[index];
+        }
+
+        // Load from localStorage on startup
+        window.onload = function() {
+            loadFromLocalStorage();
+            renderRequirementsList();
+        };
+
+        function loadFromLocalStorage() {
+            const savedTags = localStorage.getItem('customTags');
+            const savedTeams = localStorage.getItem('teamAssignments');
+            const savedSprints = localStorage.getItem('sprintAssignments');
+            const savedCapacity = localStorage.getItem('sprintCapacity');
+            const savedPoints = localStorage.getItem('customStoryPoints');
+            const savedPriority = localStorage.getItem('priorityRanking');
+            const savedStatus = localStorage.getItem('requirementStatus');
+
+            if (savedTags) customTags = JSON.parse(savedTags);
+            if (savedTeams) teamAssignments = JSON.parse(savedTeams);
+            if (savedSprints) sprintAssignments = JSON.parse(savedSprints);
+            if (savedCapacity) sprintCapacity = JSON.parse(savedCapacity);
+            if (savedPoints) customStoryPoints = JSON.parse(savedPoints);
+            if (savedPriority) priorityRanking = JSON.parse(savedPriority);
+            if (savedStatus) requirementStatus = JSON.parse(savedStatus);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('customTags', JSON.stringify(customTags));
+            localStorage.setItem('teamAssignments', JSON.stringify(teamAssignments));
+            localStorage.setItem('sprintAssignments', JSON.stringify(sprintAssignments));
+            localStorage.setItem('sprintCapacity', JSON.stringify(sprintCapacity));
+            localStorage.setItem('customStoryPoints', JSON.stringify(customStoryPoints));
+            localStorage.setItem('priorityRanking', JSON.stringify(priorityRanking));
+            localStorage.setItem('requirementStatus', JSON.stringify(requirementStatus));
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.view-btn[onclick="switchView('${view}')"]`).classList.add('active');
+
+            if (view === 'list') {
+                document.getElementById('listView').classList.add('active');
+                document.getElementById('boardView').classList.remove('active');
+            } else {
+                document.getElementById('listView').classList.remove('active');
+                document.getElementById('boardView').classList.add('active');
+                renderSprintBoard();
+            }
+        }
+
+        function renderRequirementsList() {
+            const container = document.getElementById('requirementsList');
+            container.innerHTML = '';
+
+            let filteredReqs = requirements;
+
+            // Apply filter
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'unassigned') {
+                    filteredReqs = requirements.filter(r => !sprintAssignments[r.id]);
+                } else if (currentFilter === 'north-star') {
+                    filteredReqs = requirements.filter(r => r.priority === 'north-star' || r.id.startsWith('REQ-NS') || r.id.startsWith('REQ-NFR'));
+                } else {
+                    filteredReqs = requirements.filter(r =>
+                        r.stage === currentFilter || r.priority === currentFilter
+                    );
+                }
+            }
+
+            // Apply search
+            const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase();
+            if (searchTerm) {
+                filteredReqs = filteredReqs.filter(r =>
+                    r.id.toLowerCase().includes(searchTerm) ||
+                    r.title.toLowerCase().includes(searchTerm) ||
+                    r.story.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            filteredReqs.forEach(req => {
+                const card = document.createElement('div');
+                card.className = `req-card ${req.stage}`;
+                card.draggable = true;
+                card.dataset.reqId = req.id;
+                card.ondragstart = drag;
+                card.ondragend = function() { this.classList.remove('dragging'); };
+
+                const currentPoints = customStoryPoints[req.id] !== undefined ? customStoryPoints[req.id] : req.storyPoints;
+                const isNorthStar = req.id.startsWith('REQ-NS') || req.id.startsWith('REQ-NFR') || req.priority === 'north-star';
+
+                let badgesHTML = `
+                    <span class="badge ${req.stage}">${req.stage.toUpperCase().replace('-', ' ')}</span>
+                `;
+
+                // Add sprint badge if assigned
+                if (sprintAssignments[req.id]) {
+                    const sprintName = sprintAssignments[req.id].replace('sprint-', 'Sprint ').replace('backlog', 'Backlog');
+                    badgesHTML += `<span class="badge" style="background: #6c757d; color: white;">${sprintName}</span>`;
+                }
+
+                // Add custom tags
+                if (customTags[req.id]) {
+                    customTags[req.id].forEach(tag => {
+                        const color = getTagColor(tag);
+                        badgesHTML += `<span class="badge custom-tag" style="background: ${color.bg}; color: ${color.text};">${tag}<span class="remove-tag" onclick="event.stopPropagation(); removeTag('${req.id}', '${tag}')">×</span></span>`;
+                    });
+                }
+
+                const currentPriority = priorityRanking[req.id] || '';
+
+                badgesHTML += `
+                    <span class="add-tag-btn" onclick="event.stopPropagation(); openTagModal('${req.id}')">+ Tag</span>
+                    <select class="inline-select" style="background: #6c757d; color: white; border-color: #6c757d;" onchange="updatePriorityRanking('${req.id}', this.value)" onclick="event.stopPropagation()">
+                        <option value="">Priority #</option>
+                        ${Array.from({length: 60}, (_, i) => i + 1).map(num =>
+                            `<option value="${num}" ${currentPriority == num ? 'selected' : ''}>#${num}</option>`
+                        ).join('')}
+                    </select>
+                    <select class="inline-select" style="background: #17a2b8; color: white; border-color: #17a2b8;" onchange="updateStoryPoints('${req.id}', this.value)" onclick="event.stopPropagation()">
+                        <option value="1" ${currentPoints === 1 ? 'selected' : ''}>1 pt</option>
+                        <option value="2" ${currentPoints === 2 ? 'selected' : ''}>2 pts</option>
+                        <option value="3" ${currentPoints === 3 ? 'selected' : ''}>3 pts</option>
+                        <option value="5" ${currentPoints === 5 ? 'selected' : ''}>5 pts</option>
+                        <option value="8" ${currentPoints === 8 ? 'selected' : ''}>8 pts</option>
+                        <option value="13" ${currentPoints === 13 ? 'selected' : ''}>13 pts</option>
+                        <option value="21" ${currentPoints === 21 ? 'selected' : ''}>21 pts</option>
+                    </select>
+                `;
+
+                const reqIdDisplay = isNorthStar ?
+                    `<div class="req-id">${req.id} <span class="badge north-star" style="margin-left: 8px;">⭐ North Star</span></div>` :
+                    `<div class="req-id">${req.id}</div>`;
+
+                card.innerHTML = `
+                    ${reqIdDisplay}
+                    <div class="req-title">${req.title}</div>
+                    <div class="req-story">${req.story}</div>
+                    <div class="req-meta">${badgesHTML}</div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function filterRequirements() {
+            renderRequirementsList();
+        }
+
+        function filterByCategory(category) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderRequirementsList();
+        }
+
+        function openTagModal(reqId) {
+            currentReqId = reqId;
+            document.getElementById('tagModal').classList.add('active');
+            const input = document.getElementById('tagInput');
+            input.value = '';
+            input.focus();
+
+            // Add Enter key support
+            input.onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    addTag();
+                }
+            };
+        }
+
+        function closeTagModal() {
+            document.getElementById('tagModal').classList.remove('active');
+            currentReqId = null;
+        }
+
+        function addTag() {
+            const tagName = document.getElementById('tagInput').value.trim();
+            if (!tagName || !currentReqId) return;
+
+            if (!customTags[currentReqId]) {
+                customTags[currentReqId] = [];
+            }
+
+            if (!customTags[currentReqId].includes(tagName)) {
+                customTags[currentReqId].push(tagName);
+                saveToLocalStorage();
+                renderRequirementsList();
+                if (document.getElementById('boardView').classList.contains('active')) {
+                    renderSprintBoard();
+                }
+            }
+
+            closeTagModal();
+        }
+
+        function removeTag(reqId, tagName) {
+            if (customTags[reqId]) {
+                customTags[reqId] = customTags[reqId].filter(t => t !== tagName);
+                if (customTags[reqId].length === 0) {
+                    delete customTags[reqId];
+                }
+                saveToLocalStorage();
+                renderRequirementsList();
+                if (document.getElementById('boardView').classList.contains('active')) {
+                    renderSprintBoard();
+                }
+            }
+        }
+
+        function openTeamModal(reqId) {
+            currentReqId = reqId;
+            document.getElementById('teamModal').classList.add('active');
+
+            const teamList = document.getElementById('teamList');
+            teamList.innerHTML = '';
+
+            teams.forEach(team => {
+                const option = document.createElement('div');
+                option.className = 'team-option';
+                if (teamAssignments[reqId] === team) {
+                    option.classList.add('selected');
+                }
+                option.textContent = team;
+                option.onclick = () => assignTeam(reqId, team);
+                teamList.appendChild(option);
+            });
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.remove('active');
+            currentReqId = null;
+        }
+
+        function assignTeam(reqId, team) {
+            teamAssignments[reqId] = team;
+            saveToLocalStorage();
+            renderRequirementsList();
+            closeTeamModal();
+        }
+
+        function updateStoryPoints(reqId, points) {
+            customStoryPoints[reqId] = parseInt(points);
+            saveToLocalStorage();
+            renderRequirementsList();
+            if (document.getElementById('boardView').classList.contains('active')) {
+                renderSprintBoard();
+            }
+        }
+
+        function updatePriorityRanking(reqId, priority) {
+            if (priority === '') {
+                delete priorityRanking[reqId];
+            } else {
+                priorityRanking[reqId] = parseInt(priority);
+            }
+            saveToLocalStorage();
+            renderRequirementsList();
+            if (document.getElementById('boardView').classList.contains('active')) {
+                renderSprintBoard();
+            }
+        }
+
+        function updateStatus(reqId, status) {
+            requirementStatus[reqId] = status;
+            saveToLocalStorage();
+            if (document.getElementById('boardView').classList.contains('active')) {
+                renderSprintBoard();
+            }
+        }
+
+        function openCapacityModal() {
+            document.getElementById('capacityModal').classList.add('active');
+
+            const container = document.getElementById('capacityInputs');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= 10; i++) {
+                const sprintId = `sprint-${i}`;
+                const input = document.createElement('div');
+                input.className = 'capacity-input';
+                input.innerHTML = `
+                    <label>Sprint ${i}:</label>
+                    <input type="number" id="capacity-${sprintId}" value="${sprintCapacity[sprintId] || 15}" min="1" max="100" />
+                    <span>points</span>
+                `;
+                container.appendChild(input);
+            }
+        }
+
+        function closeCapacityModal() {
+            document.getElementById('capacityModal').classList.remove('active');
+        }
+
+        function saveCapacity() {
+            for (let i = 1; i <= 10; i++) {
+                const sprintId = `sprint-${i}`;
+                const value = parseInt(document.getElementById(`capacity-${sprintId}`).value);
+                if (value > 0) {
+                    sprintCapacity[sprintId] = value;
+                }
+            }
+            saveToLocalStorage();
+            renderSprintBoard();
+            closeCapacityModal();
+        }
+
+        // Drag and drop functions
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(ev) {
+            ev.currentTarget.classList.remove('drag-over');
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("reqId", ev.target.dataset.reqId);
+            ev.target.classList.add('dragging');
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('drag-over');
+
+            const reqId = ev.dataTransfer.getData("reqId");
+            const sprintId = ev.currentTarget.dataset.sprint;
+
+            sprintAssignments[reqId] = sprintId;
+            saveToLocalStorage();
+            renderSprintBoard();
+        }
+
+        function renderSprintBoard() {
+            const sprints = ['backlog', 'sprint-1', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7', 'sprint-8', 'sprint-9', 'sprint-10'];
+
+            sprints.forEach(sprint => {
+                const container = document.getElementById(`sprint-${sprint}`);
+                container.innerHTML = '';
+
+                // For backlog, include unassigned requirements
+                const reqs = sprint === 'backlog'
+                    ? requirements.filter(r => !sprintAssignments[r.id] || sprintAssignments[r.id] === 'backlog')
+                    : requirements.filter(r => sprintAssignments[r.id] === sprint);
+                const count = reqs.length;
+                const totalPoints = reqs.reduce((sum, r) => {
+                    const points = customStoryPoints[r.id] !== undefined ? customStoryPoints[r.id] : r.storyPoints;
+                    return sum + (points || 0);
+                }, 0);
+
+                document.getElementById(`count-${sprint}`).textContent = count;
+
+                if (sprint !== 'backlog') {
+                    const capacity = sprintCapacity[sprint] || 15;
+                    const capacityEl = document.getElementById(`capacity-${sprint}`);
+                    capacityEl.textContent = `${totalPoints} / ${capacity} points`;
+                    if (totalPoints > capacity) {
+                        capacityEl.classList.add('over-capacity');
+                    } else {
+                        capacityEl.classList.remove('over-capacity');
+                    }
+                }
+
+                reqs.forEach(req => {
+                    const card = document.createElement('div');
+                    card.className = 'sprint-req-card';
+                    card.draggable = true;
+                    card.dataset.reqId = req.id;
+                    card.ondragstart = drag;
+                    card.ondragend = function() { this.classList.remove('dragging'); };
+
+                    const currentPoints = customStoryPoints[req.id] !== undefined ? customStoryPoints[req.id] : req.storyPoints;
+                    const currentPriority = priorityRanking[req.id] || '';
+                    const currentStatus = requirementStatus[req.id] || 'not-started';
+                    const isNorthStar = req.id.startsWith('REQ-NS') || req.id.startsWith('REQ-NFR') || req.priority === 'north-star';
+
+                    const reqIdDisplay = isNorthStar ?
+                        `<div class="sprint-req-id">${req.id} <span class="badge north-star" style="font-size: 9px; padding: 1px 4px;">⭐ NS</span></div>` :
+                        `<div class="sprint-req-id">${req.id}</div>`;
+
+                    // Build tags HTML
+                    let tagsHTML = `<div class="sprint-card-tags">`;
+
+                    // Stage badge
+                    const stageBadgeColors = {
+                        'stage-1': { bg: '#d1ecf1', text: '#0c5460' },
+                        'stage-2': { bg: '#d4edda', text: '#155724' },
+                        'stage-3': { bg: '#e2d9f3', text: '#4b2e83' },
+                        'nfr': { bg: '#fff3cd', text: '#856404' }
+                    };
+                    const stageColor = stageBadgeColors[req.stage] || { bg: '#e9ecef', text: '#495057' };
+                    tagsHTML += `<span class="sprint-card-tag" style="background: ${stageColor.bg}; color: ${stageColor.text};">${req.stage.toUpperCase().replace('-', ' ')}</span>`;
+
+                    // Story points
+                    tagsHTML += `<span class="sprint-card-tag" style="background: #17a2b8; color: white;">${currentPoints} pts</span>`;
+
+                    // Priority ranking
+                    if (currentPriority) {
+                        tagsHTML += `<span class="sprint-card-tag" style="background: #6c757d; color: white;">#${currentPriority}</span>`;
+                    }
+
+                    // Custom tags
+                    if (customTags[req.id]) {
+                        customTags[req.id].forEach(tag => {
+                            const color = getTagColor(tag);
+                            tagsHTML += `<span class="sprint-card-tag" style="background: ${color.bg}; color: ${color.text};">${tag}</span>`;
+                        });
+                    }
+
+                    tagsHTML += `</div>`;
+
+                    // Status dropdown
+                    const statusHTML = `
+                        <select class="status-select" onchange="updateStatus('${req.id}', this.value)" onclick="event.stopPropagation()">
+                            <option value="not-started" ${currentStatus === 'not-started' ? 'selected' : ''}>Not Started</option>
+                            <option value="in-progress" ${currentStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="blocked" ${currentStatus === 'blocked' ? 'selected' : ''}>Blocked</option>
+                            <option value="deferred" ${currentStatus === 'deferred' ? 'selected' : ''}>Deferred</option>
+                            <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    `;
+
+                    // Action buttons
+                    const actionsHTML = `
+                        <div class="sprint-card-actions">
+                            ${statusHTML}
+                            <button class="mini-btn" onclick="event.stopPropagation(); openTagModal('${req.id}')">+ Tag</button>
+                        </div>
+                    `;
+
+                    card.innerHTML = `
+                        ${reqIdDisplay}
+                        <div class="sprint-req-title">${req.title}</div>
+                        <div class="sprint-req-story">${req.story}</div>
+                        ${tagsHTML}
+                        ${actionsHTML}
+                    `;
+
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        function clearAllSprints() {
+            if (confirm('Are you sure you want to clear all sprint assignments?')) {
+                sprintAssignments = {};
+                saveToLocalStorage();
+                renderSprintBoard();
+            }
+        }
+
+        function autoAssignSprints() {
+            // Clear existing assignments
+            sprintAssignments = {};
+
+            // Sort by priority
+            const quickWins = requirements.filter(r => r.priority === 'quick-win');
+            const strategic = requirements.filter(r => r.priority === 'strategic');
+            const fillIn = requirements.filter(r => r.priority === 'fill-in');
+            const deprioritize = requirements.filter(r => r.priority === 'deprioritize');
+            const northStar = requirements.filter(r => r.priority === 'north-star' || r.id.startsWith('REQ-NS') || r.id.startsWith('REQ-NFR'));
+
+            let currentSprint = 1;
+            let currentPoints = 0;
+            const maxPoints = 15;
+
+            function assignToSprint(req) {
+                if (currentPoints + req.storyPoints > maxPoints && currentSprint < 10) {
+                    currentSprint++;
+                    currentPoints = 0;
+                }
+
+                if (currentSprint <= 10) {
+                    sprintAssignments[req.id] = `sprint-${currentSprint}`;
+                    currentPoints += req.storyPoints;
+                } else {
+                    sprintAssignments[req.id] = 'backlog';
+                }
+            }
+
+            // Assign in priority order
+            quickWins.forEach(assignToSprint);
+            strategic.forEach(assignToSprint);
+            fillIn.forEach(assignToSprint);
+            northStar.forEach(assignToSprint);
+            deprioritize.forEach(assignToSprint);
+
+            saveToLocalStorage();
+            renderSprintBoard();
+            alert(`Auto-assigned ${Object.keys(sprintAssignments).length} requirements across ${currentSprint} sprints!`);
+        }
+
+        function exportToCSV() {
+            let csv = 'Requirement ID,Title,Stage,Priority,Sprint,Team,Story Points,Custom Tags\n';
+
+            requirements.forEach(req => {
+                const sprint = sprintAssignments[req.id] || 'Unassigned';
+                const team = teamAssignments[req.id] || '';
+                const priority = customPriorities[req.id] || req.priority;
+                const points = customStoryPoints[req.id] !== undefined ? customStoryPoints[req.id] : req.storyPoints;
+                const tags = (customTags[req.id] || []).join('; ');
+                csv += `"${req.id}","${req.title}","${req.stage}","${priority}","${sprint}","${team}","${points}","${tags}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'sprint-plan-' + new Date().toISOString().split('T')[0] + '.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function saveProgress() {
+            const data = {
+                customTags: customTags,
+                teamAssignments: teamAssignments,
+                sprintAssignments: sprintAssignments,
+                sprintCapacity: sprintCapacity,
+                customPriorities: customPriorities,
+                customStoryPoints: customStoryPoints,
+                exportDate: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'sprint-planner-backup-' + new Date().toISOString().split('T')[0] + '.json');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            alert('✅ Progress saved to file! Your data is also auto-saved in browser storage.');
+        }
+
+        function loadProgress() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        customTags = data.customTags || {};
+                        teamAssignments = data.teamAssignments || {};
+                        sprintAssignments = data.sprintAssignments || {};
+                        sprintCapacity = data.sprintCapacity || {};
+                        customPriorities = data.customPriorities || {};
+                        customStoryPoints = data.customStoryPoints || {};
+                        saveToLocalStorage();
+                        renderRequirementsList();
+                        renderSprintBoard();
+                        alert('✅ Progress loaded successfully!');
+                    } catch (err) {
+                        alert('❌ Error loading file: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+    </script>
+</body>
+</html>
