@@ -1125,12 +1125,6 @@
 
                 badgesHTML += `
                     <span class="add-tag-btn" onclick="event.stopPropagation(); openTagModal('${req.id}')">+ Tag</span>
-                    <select class="inline-select" style="background: #6c757d; color: white; border-color: #6c757d;" onchange="updatePriorityRanking('${req.id}', this.value)" onclick="event.stopPropagation()">
-                        <option value="">Priority #</option>
-                        ${Array.from({length: 60}, (_, i) => i + 1).map(num =>
-                            `<option value="${num}" ${currentPriority == num ? 'selected' : ''}>#${num}</option>`
-                        ).join('')}
-                    </select>
                 `;
 
                 const reqIdDisplay = isNorthStar ?
@@ -1396,11 +1390,6 @@
                     };
                     const stageColor = stageBadgeColors[req.stage] || { bg: '#e9ecef', text: '#495057' };
                     tagsHTML += `<span class="sprint-card-tag" style="background: ${stageColor.bg}; color: ${stageColor.text};">${req.stage.toUpperCase().replace('-', ' ')}</span>`;
-
-                    // Priority ranking
-                    if (currentPriority) {
-                        tagsHTML += `<span class="sprint-card-tag" style="background: #6c757d; color: white;">#${currentPriority}</span>`;
-                    }
 
                     // Custom tags
                     if (customTags[req.id]) {
