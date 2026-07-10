@@ -1106,9 +1106,9 @@
                     <span class="badge ${req.stage}">${req.stage.toUpperCase().replace('-', ' ')}</span>
                 `;
 
-                // Add sprint badge if assigned
-                if (sprintAssignments[req.id]) {
-                    const sprintName = sprintAssignments[req.id].replace('sprint-', 'Sprint ').replace('backlog', 'Backlog');
+                // Add sprint badge if assigned (but not for backlog)
+                if (sprintAssignments[req.id] && sprintAssignments[req.id] !== 'backlog') {
+                    const sprintName = sprintAssignments[req.id].replace('sprint-', 'Sprint ');
                     badgesHTML += `<span class="badge" style="background: #6c757d; color: white;">${sprintName}</span>`;
                 }
 
