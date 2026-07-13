@@ -687,7 +687,7 @@
         </div>
 
         <div class="filters">
-            <button class="filter-btn active" onclick="filterByCategory('all')">All (79)</button>
+            <button class="filter-btn active" onclick="filterByCategory('all')">All (78)</button>
             <button class="filter-btn" onclick="filterByCategory('stage-1')">Stage 1</button>
             <button class="filter-btn" onclick="filterByCategory('stage-2')">Stage 2</button>
             <button class="filter-btn" onclick="filterByCategory('stage-3')">Stage 3</button>
@@ -886,9 +886,8 @@
             {id: "REQ-1.15", title: "Test Case Categorization", stage: "stage-1", priority: "strategic", story: "As a tester\nI want to categorize each test case as Regression, End to End, Sanity, UAT\nSo that I can classify tests appropriately", storyPoints: 2},
             {id: "REQ-1.16", title: "Input Traceability", stage: "stage-1", priority: "strategic", story: "As a tester\nI want to ensure every test case traces back to the provided inputs\nSo that I have traceability to inputs", storyPoints: 3},
             {id: "REQ-1.17", title: "Actual Result Field", stage: "stage-1", priority: "strategic", story: "As a tester,\nI want to include an Actual Result field in the test case template\nso that I can document the actual outcome of the test.", storyPoints: 2},
-            {id: "REQ-1.18", title: "Status Fields", stage: "stage-1", priority: "strategic", story: "As a tester,\nI want to include a Status fields Not started, not started downstream, in progress, fail, blocked, retest, pass in the test case template\nso that I can track the progress of the test case.", storyPoints: 2},
-            {id: "REQ-1.19", title: "Notes/Comments Section", stage: "stage-1", priority: "strategic", story: "As a tester, I want to add a Notes/Comments section so that I can record additional observations or implementation details.", storyPoints: 1},
-            {id: "REQ-1.20", title: "Pull Request Input", stage: "stage-1", priority: "strategic", story: "As a tester,\nI want to be able to use the PR as an input,\nso that I can validate pull request data", storyPoints: 5},
+            {id: "REQ-1.18", title: "Notes/Comments Section", stage: "stage-1", priority: "strategic", story: "As a tester, I want to add a Notes/Comments section so that I can record additional observations or implementation details.", storyPoints: 1},
+            {id: "REQ-1.19", title: "Pull Request Input", stage: "stage-1", priority: "strategic", story: "As a tester,\nI want to be able to use the PR as an input,\nso that I can validate pull request data", storyPoints: 5},
             {id: "REQ-2.6", title: "Bulk Test Scenario Updates", stage: "stage-1", priority: "strategic", story: "As a tester\nI want to bulk update my test scenarios\nSo that I can easily update the status in one place", storyPoints: 3},
             {id: "REQ-2.7", title: "Test Date Tracking", stage: "stage-1", priority: "strategic", story: "As a tester\nI want to add a start and end date to a test scenario\nSo that I can easily pull a report of my assigned test cases by date", storyPoints: 2},
             {id: "REQ-2.8", title: "Enhanced Test Case Traceability", stage: "stage-1", priority: "strategic", story: "As a tester\nI want priority, story mapping, and AC traceability\nSo that I have enhanced test case traceability", storyPoints: 5},
@@ -956,6 +955,95 @@
             {id: "REQ-NFR-2", title: "Performance NFR- Needs refined", stage: "nfr", priority: "strategic", story: "As a platform owner\nI want to handle high-volume concurrent execution\nSo that we meet performance requirements", storyPoints: 8},
             {id: "REQ-NFR-3", title: "Accessibility NFR- Needs refined", stage: "nfr", priority: "strategic", story: "As a tester\nI want a fully accessible platform UI\nSo that all users can access the system", storyPoints: 5}
         ];
+
+        // Tags sourced from column E of the Google Sheet (source of truth).
+        // Keyed by the app's current requirement IDs. These are UNION-merged into
+        // customTags on load (see loadFromLocalStorage) so they never override
+        // tags the user added manually.
+        const sheetTags = {
+            // Stage 1
+            "REQ-1.1": ["MVP", "Business", "Platform"],
+            "REQ-1.2": ["Post MVP", "Business", "Process"],
+            "REQ-1.3": ["MVP", "Business", "Process"],
+            "REQ-1.4": ["Business", "Post MVP", "Process"],
+            "REQ-1.5": ["Post MVP", "Platform", "Business"],
+            "REQ-1.6": ["Post MVP", "Business", "Platform"],
+            "REQ-1.8": ["Business", "Process", "MVP"],
+            "REQ-1.9": ["MVP", "Platform"],
+            "REQ-1.10": ["Platform", "Post MVP", "North Star"],
+            "REQ-1.11": ["MVP", "Business", "Process"],
+            "REQ-1.12": ["MVP", "Process", "North Star"],
+            "REQ-1.13": ["MVP", "Process"],
+            "REQ-1.14": ["MVP", "Process"],
+            "REQ-1.15": ["MVP", "Process"],
+            "REQ-1.16": ["Platform", "MVP"],
+            "REQ-1.17": ["MVP", "Process"],
+            "REQ-1.18": ["MVP", "Process"],
+            "REQ-1.19": ["MVP", "Platform"],
+            "REQ-2.6": ["Business", "Process", "MVP"],
+            "REQ-2.7": ["MVP", "Process", "Business"],
+            "REQ-2.8": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.9": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.10-s1": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.11": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.12-s1": ["Platform", "MVP", "Business"],
+            "REQ-2.13-s1": ["North Star", "Post MVP", "Platform"],
+            // Stage 2
+            "REQ-2.1": ["MVP", "Business", "Process"],
+            "REQ-2.10": ["MVP", "Process", "Business"],
+            "REQ-2.12": ["MVP", "Process", "Business"],
+            "REQ-2.13": ["Post MVP", "Business", "Process"],
+            "REQ-2.14": ["MVP", "Process", "Business"],
+            "REQ-2.15": ["MVP", "Process", "Business"],
+            "REQ-2.16": ["MVP", "Process", "Business"],
+            "REQ-2.17": ["MVP", "Process", "Business"],
+            "REQ-2.18": ["Process", "Business", "Post MVP"],
+            "REQ-2.19": ["Process", "Business", "Post MVP"],
+            "REQ-2.20": ["Process", "Business", "Post MVP"],
+            "REQ-2.21": ["MVP", "Process", "Business"],
+            "REQ-2.22": ["MVP", "Business", "Platform"],
+            "REQ-2.23": ["MVP", "Business", "Platform"],
+            "REQ-2.24": ["MVP", "Business", "Platform"],
+            "REQ-2.25": ["Post MVP", "Process", "Business"],
+            "REQ-2.26": ["Post MVP", "Platform"],
+            "REQ-2.27": ["Post MVP", "Platform"],
+            "REQ-2.28": ["Post MVP", "Business", "Process"],
+            "REQ-2.29": ["Post MVP", "Business", "Process"],
+            "REQ-2.30": ["MVP", "Platform"],
+            "REQ-2.31": ["Post MVP", "Business", "Process"],
+            "REQ-2.32": ["MVP", "Process", "Business"],
+            "REQ-2.33": ["Post MVP", "Business", "Process"],
+            "REQ-2.34": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.35": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.36": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.37": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.38": ["North Star", "Post MVP", "Platform"],
+            "REQ-2.39": ["North Star", "Post MVP", "Platform"],
+            // Stage 3
+            "REQ-3.10": ["Business", "Process", "North Star"],
+            "REQ-3.11": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.12a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.13a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.14a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.15a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.16a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.17a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.18a": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.10b": ["North Star", "Post MVP", "Platform"],
+            "REQ-3.11b": ["Platform", "Post MVP"],
+            "REQ-3.12": ["Post MVP", "Platform"],
+            "REQ-3.13": ["Post MVP", "North Star", "Platform"],
+            "REQ-3.14": ["Post MVP", "Platform"],
+            "REQ-3.15": ["Post MVP", "Platform"],
+            "REQ-3.16": ["Post MVP", "Platform"],
+            "REQ-3.17": ["Post MVP", "Platform"],
+            "REQ-3.18": ["Post MVP", "Platform"],
+            "REQ-3.19": ["Post MVP", "North Star", "Platform"],
+            // NFR
+            "REQ-NFR-1": ["North Star", "Post MVP", "Platform"],
+            "REQ-NFR-2": ["North Star", "Post MVP", "Platform"],
+            "REQ-NFR-3": ["North Star", "Post MVP", "Platform"]
+        };
 
         const teams = [
             "Stage 1 Team",
@@ -1039,6 +1127,16 @@
             if (savedPoints) customStoryPoints = JSON.parse(savedPoints);
             if (savedPriority) priorityRanking = JSON.parse(savedPriority);
             if (savedStatus) requirementStatus = JSON.parse(savedStatus);
+
+            // Union-merge the Google Sheet's column-E tags into customTags.
+            // Never overrides tags the user added by hand; idempotent (no dupes).
+            Object.keys(sheetTags).forEach(id => {
+                if (!customTags[id]) customTags[id] = [];
+                sheetTags[id].forEach(tag => {
+                    if (!customTags[id].includes(tag)) customTags[id].push(tag);
+                });
+            });
+            saveToLocalStorage();
         }
 
         function saveToLocalStorage() {
