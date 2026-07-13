@@ -1073,6 +1073,12 @@
 
         // Generate consistent color for a tag based on its name
         function getTagColor(tagName) {
+            // Explicit overrides for specific tags (takes priority over the hash).
+            const overrides = {
+                'MVP': { bg: '#8E44AD', text: '#FFF' } // Purple
+            };
+            if (overrides[tagName]) return overrides[tagName];
+
             const colors = [
                 { bg: '#FF6B6B', text: '#FFF' }, // Red
                 { bg: '#4ECDC4', text: '#FFF' }, // Teal
