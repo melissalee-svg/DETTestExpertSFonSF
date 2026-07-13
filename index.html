@@ -210,6 +210,131 @@
             display: block;
         }
 
+        /* Problems & Outcomes View */
+        .problems-outcomes {
+            display: none;
+        }
+
+        .problems-outcomes.active {
+            display: block;
+        }
+
+        .po-intro {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .po-intro h2 {
+            margin: 0 0 8px 0;
+            color: #2d3436;
+        }
+
+        .po-intro p {
+            margin: 0;
+            color: #666;
+        }
+
+        .po-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .po-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .po-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 5px solid #ccc;
+        }
+
+        .po-card.problem {
+            border-left-color: #E85D75;
+        }
+
+        .po-card.outcome {
+            border-left-color: #52B788;
+        }
+
+        .po-card .po-label {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .po-card.problem .po-label {
+            background: #FDEDF0;
+            color: #E85D75;
+        }
+
+        .po-card.outcome .po-label {
+            background: #E6F5EE;
+            color: #2E9E6B;
+        }
+
+        .po-card .po-text {
+            color: #2d3436;
+            line-height: 1.5;
+        }
+
+        .po-card.empty .po-text {
+            color: #aaa;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .po-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Roadmap View */
+        .roadmap-view {
+            display: none;
+        }
+
+        .roadmap-view.active {
+            display: block;
+        }
+
+        .roadmap-placeholder {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 60px 24px;
+            text-align: center;
+            color: #999;
+        }
+
+        .roadmap-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .roadmap-placeholder h3 {
+            margin: 0 0 8px 0;
+            color: #666;
+        }
+
+        .roadmap-placeholder p {
+            margin: 0;
+            color: #999;
+        }
+
         .sprint-controls {
             display: flex;
             gap: 10px;
@@ -667,8 +792,10 @@
         </p>
 
         <div class="view-toggle">
+            <button class="view-btn" onclick="switchView('problems')">🎯 Problems &amp; Outcomes</button>
             <button class="view-btn active" onclick="switchView('list')">📋 Requirements List</button>
             <button class="view-btn" onclick="switchView('board')">🗂️ Sprint Board</button>
+            <button class="view-btn" onclick="switchView('roadmap')">🛣️ Roadmap</button>
         </div>
 
         <div class="export-buttons">
@@ -678,6 +805,15 @@
         <div style="margin-top: 10px;">
             <a href="https://docs.google.com/spreadsheets/d/1xfo1pvFektnw8IGGdYaq55Zeu-h5n9wbOS-e3qRhNBg/edit?gid=1521695536#gid=1521695536" target="_blank" class="export-btn" style="text-decoration: none; display: inline-block;">📄 SFonSF-DET TestExpert Requirements_SSOT</a>
         </div>
+    </div>
+
+    <!-- Problems & Outcomes View -->
+    <div class="problems-outcomes" id="problemsView">
+        <div class="po-intro">
+            <h2>🎯 Problems to Solve &amp; Outcomes</h2>
+            <p>The core problems this initiative addresses and the outcomes we aim to achieve.</p>
+        </div>
+        <div class="po-grid" id="problemsOutcomesGrid"></div>
     </div>
 
     <!-- Requirements List View -->
@@ -826,6 +962,19 @@
                 <div class="sprint-items" id="sprint-sprint-10"></div>
             </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Roadmap View -->
+    <div class="roadmap-view" id="roadmapView">
+        <div class="po-intro">
+            <h2>🛣️ Roadmap</h2>
+            <p>High-level delivery timeline for the DET Testing Expert initiative.</p>
+        </div>
+        <div class="roadmap-placeholder">
+            <div class="roadmap-placeholder-icon">🚧</div>
+            <h3>Roadmap coming soon</h3>
+            <p>This section is a placeholder. Roadmap data will be added here once it's available.</p>
         </div>
     </div>
 
@@ -1045,6 +1194,35 @@
             "REQ-NFR-3": ["North Star", "Post MVP", "Platform"]
         };
 
+        // Problems to Solve & Outcomes (from the Google Sheet tab of the same name).
+        // Each row pairs a problem with its corresponding outcome (outcome may be blank).
+        const problemsOutcomes = [
+            {
+                problem: "There exists no out of the box AI testing tool which tests Agents and Salesforce functionality that can be used by both DET and Business, which can be leveraged for all solution delivery models, (RIS, PODs,)",
+                outcome: "Achieve successful adoption of a unified, cross-functional AI testing tool by at least one scrum team in Revenue, Sales, and Customer Success"
+            },
+            {
+                problem: "The tool that T&P built- called Test Expert does not support DET testing requirements.",
+                outcome: "Deliver a customized DET version of Test Expert that is fully accessible and functional for business testers."
+            },
+            {
+                problem: "Presently, Linear is only generally available for DET and does not contain an end to end testing solution",
+                outcome: "Bridge the gap by integrating comprehensive end-to-end testing features into the unified Test Expert tool."
+            },
+            {
+                problem: "P2C team is also reviewing AI testing tools, which are different than what DET is creating",
+                outcome: "Collaborate with P2C business to implement AI automation into the UAT testing workflow to significantly increase efficiency and reduce manual testing effort."
+            },
+            {
+                problem: "UAT testing is currently done on Googlesheets, or in Narwhale which is a Salesforce solution w/out AI automation.",
+                outcome: ""
+            },
+            {
+                problem: "Narwhale is being used by DET and M&A testing and SOX control mapping due to it's capabilities to support sequential end to end testing, but is not headless nor Agentic.",
+                outcome: "Ensure the new testing solution integrates seamlessly with the ERG Platform and fully supports DET, M&A, and SOX control mapping requirements."
+            }
+        ];
+
         const teams = [
             "Stage 1 Team",
             "Stage 2 Team",
@@ -1159,14 +1337,49 @@
             document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`.view-btn[onclick="switchView('${view}')"]`).classList.add('active');
 
-            if (view === 'list') {
-                document.getElementById('listView').classList.add('active');
-                document.getElementById('boardView').classList.remove('active');
-            } else {
-                document.getElementById('listView').classList.remove('active');
-                document.getElementById('boardView').classList.add('active');
+            const views = {
+                problems: 'problemsView',
+                list: 'listView',
+                board: 'boardView',
+                roadmap: 'roadmapView'
+            };
+            Object.values(views).forEach(id => document.getElementById(id).classList.remove('active'));
+            document.getElementById(views[view] || 'listView').classList.add('active');
+
+            if (view === 'board') {
                 renderSprintBoard();
+            } else if (view === 'problems') {
+                renderProblemsOutcomes();
             }
+        }
+
+        function renderProblemsOutcomes() {
+            const container = document.getElementById('problemsOutcomesGrid');
+            if (!container) return;
+            container.textContent = '';
+
+            const makeCard = (type, labelText, bodyText, isEmpty) => {
+                const card = document.createElement('div');
+                card.className = 'po-card ' + type + (isEmpty ? ' empty' : '');
+                const label = document.createElement('span');
+                label.className = 'po-label';
+                label.textContent = labelText;
+                const body = document.createElement('div');
+                body.className = 'po-text';
+                body.textContent = bodyText;
+                card.appendChild(label);
+                card.appendChild(body);
+                return card;
+            };
+
+            problemsOutcomes.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'po-row';
+                row.appendChild(makeCard('problem', 'Problem to Solve', item.problem, false));
+                const hasOutcome = item.outcome && item.outcome.trim().length > 0;
+                row.appendChild(makeCard('outcome', 'Outcome', hasOutcome ? item.outcome : 'No outcome defined yet.', !hasOutcome));
+                container.appendChild(row);
+            });
         }
 
         function renderRequirementsList() {
