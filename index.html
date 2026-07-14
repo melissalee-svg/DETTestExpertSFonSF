@@ -1292,7 +1292,8 @@
         // Load from localStorage on startup
         window.onload = function() {
             loadFromLocalStorage();
-            renderRequirementsList();
+            renderRequirementsList();     // pre-populate list so it's ready when selected
+            switchView('problems');       // land on Problems & Outcomes by default
         };
 
         function loadFromLocalStorage() {
