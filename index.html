@@ -302,6 +302,30 @@
             }
         }
 
+        /* Architecture View */
+        .architecture-view {
+            display: none;
+        }
+
+        .architecture-view.active {
+            display: block;
+        }
+
+        .arch-slide {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 12px;
+            margin-bottom: 24px;
+        }
+
+        .arch-slide img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
         /* Roadmap View */
         .roadmap-view {
             display: none;
@@ -794,6 +818,7 @@
         <div class="view-toggle">
             <button class="view-btn" onclick="switchView('problems')">🎯 Problems &amp; Outcomes</button>
             <button class="view-btn active" onclick="switchView('list')">📋 Requirements List</button>
+            <button class="view-btn" onclick="switchView('architecture')">🏗️ Architecture</button>
             <button class="view-btn" onclick="switchView('board')">🗂️ Sprint Board</button>
             <button class="view-btn" onclick="switchView('roadmap')">🛣️ Roadmap</button>
         </div>
@@ -831,6 +856,29 @@
         </div>
 
         <div id="requirementsList"></div>
+    </div>
+
+    <!-- Architecture View -->
+    <div class="architecture-view" id="architectureView">
+        <div class="po-intro">
+            <h2>🏗️ Architecture</h2>
+            <p>End-to-end process and tooling architecture for the DET Testing Expert.</p>
+        </div>
+        <div class="arch-slide">
+            <img src="images/architecture/slide2.png" alt="Architecture — core stages gated &amp; refining, with supporting stages around them">
+        </div>
+        <div class="arch-slide">
+            <img src="images/architecture/slide3.png" alt="Core Stage 1 — Intent to Coverage">
+        </div>
+        <div class="arch-slide">
+            <img src="images/architecture/slide4.png" alt="Core Stage 2 — Agentic Test Execution">
+        </div>
+        <div class="arch-slide">
+            <img src="images/architecture/slide5.png" alt="Core Stage 3 — Autonomous Codegen &amp; Self-Repair">
+        </div>
+        <div class="arch-slide">
+            <img src="images/architecture/slide6.png" alt="Three supporting stages — event/schedule-triggered, unattended">
+        </div>
     </div>
 
     <!-- Sprint Board View -->
@@ -1341,6 +1389,7 @@
             const views = {
                 problems: 'problemsView',
                 list: 'listView',
+                architecture: 'architectureView',
                 board: 'boardView',
                 roadmap: 'roadmapView'
             };
