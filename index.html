@@ -819,7 +819,7 @@
     <!-- Requirements List View -->
     <div class="requirements-list active" id="listView">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 Search requirements..." onkeyup="filterRequirements()">
+            <input type="text" id="searchInput" placeholder="🔍 Search by requirement #, subject, or tag (e.g. Post MVP)..." onkeyup="filterRequirements()">
         </div>
 
         <div class="filters">
@@ -1401,14 +1401,16 @@
                 }
             }
 
-            // Apply search
-            const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase();
+            // Apply search — matches requirement number, title/subject, story, and tags
+            const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase().trim();
             if (searchTerm) {
-                filteredReqs = filteredReqs.filter(r =>
-                    r.id.toLowerCase().includes(searchTerm) ||
-                    r.title.toLowerCase().includes(searchTerm) ||
-                    r.story.toLowerCase().includes(searchTerm)
-                );
+                filteredReqs = filteredReqs.filter(r => {
+                    const tags = (customTags[r.id] || []).join(' ').toLowerCase();
+                    return r.id.toLowerCase().includes(searchTerm) ||
+                        r.title.toLowerCase().includes(searchTerm) ||
+                        r.story.toLowerCase().includes(searchTerm) ||
+                        tags.includes(searchTerm);
+                });
             }
 
             filteredReqs.forEach(req => {
