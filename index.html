@@ -604,6 +604,11 @@
             color: #084298;
         }
 
+        .status-in-testing {
+            background: #e0d4fb;
+            color: #5a2a9e;
+        }
+
         .status-blocked {
             background: #f8d7da;
             color: #842029;
@@ -1780,6 +1785,7 @@
                         <select class="status-select" onchange="updateStatus('${req.id}', this.value)" onclick="event.stopPropagation()">
                             <option value="not-started" ${currentStatus === 'not-started' ? 'selected' : ''}>Not Started</option>
                             <option value="in-progress" ${currentStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="in-testing" ${currentStatus === 'in-testing' ? 'selected' : ''}>In Testing</option>
                             <option value="blocked" ${currentStatus === 'blocked' ? 'selected' : ''}>Blocked</option>
                             <option value="deferred" ${currentStatus === 'deferred' ? 'selected' : ''}>Deferred</option>
                             <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completed</option>
