@@ -170,6 +170,69 @@
             color: white;
         }
 
+        /* Assignee chips (modal) */
+        .assignee-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .assignee-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e7f0ff;
+            color: #1a4b8c;
+        }
+
+        .assignee-chip-remove {
+            cursor: pointer;
+            font-weight: bold;
+            color: #1a4b8c;
+            line-height: 1;
+        }
+
+        .assignee-chip-remove:hover {
+            color: #c0392b;
+        }
+
+        /* Assignee display on sprint cards */
+        .sprint-card-assignees {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin: 6px 0;
+        }
+
+        .assignee-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #e7f0ff;
+            color: #1a4b8c;
+        }
+
+        .assignee-pill .avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #1a4b8c;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
         .add-tag-btn, .assign-team-btn {
             display: inline-block;
             padding: 4px 10px;
@@ -1050,14 +1113,19 @@
         </div>
     </div>
 
-    <!-- Assign Team Modal -->
-    <div class="modal" id="teamModal">
+    <!-- Assign People Modal -->
+    <div class="modal" id="assigneeModal">
         <div class="modal-content">
-            <h2>Assign Team</h2>
-            <p style="color: #666;">Select a team for this requirement:</p>
-            <div class="team-list" id="teamList"></div>
+            <h2>Assign People</h2>
+            <p style="color: #666;">Add one or more people to this requirement:</p>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="assigneeInput" list="assigneeSuggestions" placeholder="Type a name and press Enter..." style="flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addAssignee();}" />
+                <button class="btn-primary" onclick="addAssignee()">Add</button>
+            </div>
+            <datalist id="assigneeSuggestions"></datalist>
+            <div class="assignee-chips" id="assigneeChips" style="margin-top: 15px;"></div>
             <div class="modal-buttons" style="margin-top: 20px;">
-                <button class="btn-secondary" onclick="closeTeamModal()">Cancel</button>
+                <button class="btn-secondary" onclick="closeAssigneeModal()">Done</button>
             </div>
         </div>
     </div>
@@ -1305,7 +1373,8 @@
         let currentFilter = 'all';
         let currentReqId = null;
         let customTags = {}; // {reqId: [tag1, tag2]}
-        let teamAssignments = {}; // {reqId: team}
+        let teamAssignments = {}; // {reqId: team} — legacy, kept for backup compatibility
+        let assignees = {}; // {reqId: [name1, name2]} — multiple people per requirement
         let sprintAssignments = {}; // {reqId: sprintId}
         let sprintCapacity = {}; // {sprintId: capacity}
         let customStoryPoints = {}; // {reqId: points}
@@ -1372,6 +1441,7 @@
             const savedPoints = localStorage.getItem('customStoryPoints');
             const savedPriority = localStorage.getItem('priorityRanking');
             const savedStatus = localStorage.getItem('requirementStatus');
+            const savedAssignees = localStorage.getItem('assignees');
 
             if (savedTags) customTags = JSON.parse(savedTags);
             if (savedTeams) teamAssignments = JSON.parse(savedTeams);
@@ -1380,6 +1450,7 @@
             if (savedPoints) customStoryPoints = JSON.parse(savedPoints);
             if (savedPriority) priorityRanking = JSON.parse(savedPriority);
             if (savedStatus) requirementStatus = JSON.parse(savedStatus);
+            if (savedAssignees) assignees = JSON.parse(savedAssignees);
 
             // Union-merge the Google Sheet's column-E tags into customTags.
             // Never overrides tags the user added by hand; idempotent (no dupes).
@@ -1400,6 +1471,31 @@
             localStorage.setItem('customStoryPoints', JSON.stringify(customStoryPoints));
             localStorage.setItem('priorityRanking', JSON.stringify(priorityRanking));
             localStorage.setItem('requirementStatus', JSON.stringify(requirementStatus));
+            localStorage.setItem('assignees', JSON.stringify(assignees));
+        }
+
+        // Initials for an assignee avatar, e.g. "Melissa Lee" -> "ML".
+        function getInitials(name) {
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        // Escape text for safe interpolation into card innerHTML.
+        function escapeHTML(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Distinct list of every person name used so far, for typeahead suggestions.
+        function getAllAssigneeNames() {
+            const set = new Set();
+            Object.values(assignees).forEach(list => (list || []).forEach(n => set.add(n)));
+            return [...set].sort((a, b) => a.localeCompare(b));
         }
 
         function switchView(view) {
@@ -1544,7 +1640,8 @@
             const term = norm(rawTerm);
             if (!term) return true;
             const tags = (customTags[req.id] || []).join(' ');
-            const haystack = norm([req.id, req.title, req.story, tags, req.stage].join(' '));
+            const people = (assignees[req.id] || []).join(' ');
+            const haystack = norm([req.id, req.title, req.story, tags, req.stage, people].join(' '));
             return haystack.includes(term);
         }
 
@@ -1609,35 +1706,86 @@
             }
         }
 
-        function openTeamModal(reqId) {
+        function openAssigneeModal(reqId) {
             currentReqId = reqId;
-            document.getElementById('teamModal').classList.add('active');
-
-            const teamList = document.getElementById('teamList');
-            teamList.innerHTML = '';
-
-            teams.forEach(team => {
-                const option = document.createElement('div');
-                option.className = 'team-option';
-                if (teamAssignments[reqId] === team) {
-                    option.classList.add('selected');
-                }
-                option.textContent = team;
-                option.onclick = () => assignTeam(reqId, team);
-                teamList.appendChild(option);
-            });
+            document.getElementById('assigneeModal').classList.add('active');
+            document.getElementById('assigneeInput').value = '';
+            renderAssigneeSuggestions();
+            renderAssigneeChips();
+            document.getElementById('assigneeInput').focus();
         }
 
-        function closeTeamModal() {
-            document.getElementById('teamModal').classList.remove('active');
+        function closeAssigneeModal() {
+            document.getElementById('assigneeModal').classList.remove('active');
             currentReqId = null;
         }
 
-        function assignTeam(reqId, team) {
-            teamAssignments[reqId] = team;
+        function renderAssigneeSuggestions() {
+            const datalist = document.getElementById('assigneeSuggestions');
+            datalist.innerHTML = '';
+            getAllAssigneeNames().forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                datalist.appendChild(opt);
+            });
+        }
+
+        function renderAssigneeChips() {
+            const chips = document.getElementById('assigneeChips');
+            chips.innerHTML = '';
+            const list = assignees[currentReqId] || [];
+            if (list.length === 0) {
+                const empty = document.createElement('span');
+                empty.style.color = '#999';
+                empty.style.fontSize = '13px';
+                empty.textContent = 'No one assigned yet.';
+                chips.appendChild(empty);
+                return;
+            }
+            list.forEach(name => {
+                const chip = document.createElement('span');
+                chip.className = 'assignee-chip';
+                chip.textContent = name;
+                const x = document.createElement('span');
+                x.className = 'assignee-chip-remove';
+                x.textContent = '×';
+                x.onclick = () => removeAssignee(name);
+                chip.appendChild(x);
+                chips.appendChild(chip);
+            });
+        }
+
+        function addAssignee() {
+            const input = document.getElementById('assigneeInput');
+            const name = input.value.trim();
+            if (!name) return;
+            if (!assignees[currentReqId]) assignees[currentReqId] = [];
+            // Case-insensitive dedupe
+            if (!assignees[currentReqId].some(n => n.toLowerCase() === name.toLowerCase())) {
+                assignees[currentReqId].push(name);
+            }
+            input.value = '';
             saveToLocalStorage();
+            renderAssigneeSuggestions();
+            renderAssigneeChips();
+            refreshBoardAndList();
+            input.focus();
+        }
+
+        function removeAssignee(name) {
+            if (!assignees[currentReqId]) return;
+            assignees[currentReqId] = assignees[currentReqId].filter(n => n !== name);
+            if (assignees[currentReqId].length === 0) delete assignees[currentReqId];
+            saveToLocalStorage();
+            renderAssigneeChips();
+            refreshBoardAndList();
+        }
+
+        function refreshBoardAndList() {
             renderRequirementsList();
-            closeTeamModal();
+            if (document.getElementById('boardView').classList.contains('active')) {
+                renderSprintBoard();
+            }
         }
 
         function updateStoryPoints(reqId, points) {
@@ -1809,6 +1957,17 @@
 
                     tagsHTML += `</div>`;
 
+                    // Assignees
+                    let assigneesHTML = '';
+                    const cardAssignees = assignees[req.id] || [];
+                    if (cardAssignees.length > 0) {
+                        assigneesHTML = `<div class="sprint-card-assignees">` +
+                            cardAssignees.map(name =>
+                                `<span class="assignee-pill" title="${escapeHTML(name)}"><span class="avatar">${escapeHTML(getInitials(name))}</span>${escapeHTML(name)}</span>`
+                            ).join('') +
+                            `</div>`;
+                    }
+
                     // Status dropdown
                     const statusHTML = `
                         <select class="status-select" onchange="updateStatus('${req.id}', this.value)" onclick="event.stopPropagation()">
@@ -1826,6 +1985,7 @@
                         <div class="sprint-card-actions">
                             ${statusHTML}
                             <button class="mini-btn" onclick="event.stopPropagation(); openTagModal('${req.id}')">+ Tag</button>
+                            <button class="mini-btn" onclick="event.stopPropagation(); openAssigneeModal('${req.id}')">+ Assignee</button>
                         </div>
                     `;
 
@@ -1834,6 +1994,7 @@
                         <div class="sprint-req-title">${req.title}</div>
                         <div class="sprint-req-story">${req.story}</div>
                         ${tagsHTML}
+                        ${assigneesHTML}
                         ${actionsHTML}
                     `;
 
@@ -1892,15 +2053,15 @@
         }
 
         function exportToCSV() {
-            let csv = 'Requirement ID,Title,Stage,Priority,Sprint,Team,Story Points,Custom Tags\n';
+            let csv = 'Requirement ID,Title,Stage,Priority,Sprint,Assignees,Story Points,Custom Tags\n';
 
             requirements.forEach(req => {
                 const sprint = sprintAssignments[req.id] || 'Unassigned';
-                const team = teamAssignments[req.id] || '';
+                const people = (assignees[req.id] || []).join('; ');
                 const priority = customPriorities[req.id] || req.priority;
                 const points = customStoryPoints[req.id] !== undefined ? customStoryPoints[req.id] : req.storyPoints;
                 const tags = (customTags[req.id] || []).join('; ');
-                csv += `"${req.id}","${req.title}","${req.stage}","${priority}","${sprint}","${team}","${points}","${tags}"\n`;
+                csv += `"${req.id}","${req.title}","${req.stage}","${priority}","${sprint}","${people}","${points}","${tags}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -1918,6 +2079,7 @@
             const data = {
                 customTags: customTags,
                 teamAssignments: teamAssignments,
+                assignees: assignees,
                 sprintAssignments: sprintAssignments,
                 sprintCapacity: sprintCapacity,
                 customPriorities: customPriorities,
@@ -1951,6 +2113,7 @@
                         const data = JSON.parse(event.target.result);
                         customTags = data.customTags || {};
                         teamAssignments = data.teamAssignments || {};
+                        assignees = data.assignees || {};
                         sprintAssignments = data.sprintAssignments || {};
                         sprintCapacity = data.sprintCapacity || {};
                         customPriorities = data.customPriorities || {};
