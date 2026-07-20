@@ -1472,15 +1472,9 @@
             }
 
             // Apply search — matches requirement number, title/subject, story, and tags
-            const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase().trim();
+            const searchTerm = document.getElementById('searchInput')?.value?.trim();
             if (searchTerm) {
-                filteredReqs = filteredReqs.filter(r => {
-                    const tags = (customTags[r.id] || []).join(' ').toLowerCase();
-                    return r.id.toLowerCase().includes(searchTerm) ||
-                        r.title.toLowerCase().includes(searchTerm) ||
-                        r.story.toLowerCase().includes(searchTerm) ||
-                        tags.includes(searchTerm);
-                });
+                filteredReqs = filteredReqs.filter(r => matchesSearch(r, searchTerm));
             }
 
             filteredReqs.forEach(req => {
@@ -1539,6 +1533,19 @@
 
         function filterSprintBoard() {
             renderSprintBoard();
+        }
+
+        // Shared search predicate for the Requirements List and Sprint Board.
+        // Matches requirement #, title/subject, story, tags, and stage.
+        // Spaces and hyphens are normalized away so "stage 2", "stage-2",
+        // and "stage2" all match, as do "Post MVP" / "post-mvp", etc.
+        function matchesSearch(req, rawTerm) {
+            const norm = s => (s || '').toLowerCase().replace(/[\s\-]+/g, '');
+            const term = norm(rawTerm);
+            if (!term) return true;
+            const tags = (customTags[req.id] || []).join(' ');
+            const haystack = norm([req.id, req.title, req.story, tags, req.stage].join(' '));
+            return haystack.includes(term);
         }
 
         function filterByCategory(category) {
@@ -1741,13 +1748,7 @@
 
                 // Apply the same search filter as the Requirements List
                 const reqs = searchTerm
-                    ? assignedReqs.filter(r => {
-                        const tags = (customTags[r.id] || []).join(' ').toLowerCase();
-                        return r.id.toLowerCase().includes(searchTerm) ||
-                            r.title.toLowerCase().includes(searchTerm) ||
-                            r.story.toLowerCase().includes(searchTerm) ||
-                            tags.includes(searchTerm);
-                    })
+                    ? assignedReqs.filter(r => matchesSearch(r, searchTerm))
                     : assignedReqs;
                 const count = reqs.length;
                 const totalPoints = reqs.reduce((sum, r) => {
