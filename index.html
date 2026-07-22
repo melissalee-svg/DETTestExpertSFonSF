@@ -453,6 +453,7 @@
             min-width: 900px;
         }
         .gantt-months {
+            position: relative;
             display: grid;
             margin-left: 260px;
             border-bottom: 2px solid #e9ecef;
@@ -475,8 +476,8 @@
         }
         .gantt-row {
             display: flex;
-            align-items: center;
-            height: 34px;
+            align-items: stretch;
+            min-height: 34px;
         }
         .gantt-row:hover {
             background: #f8f9fa;
@@ -486,10 +487,12 @@
             flex: 0 0 260px;
             font-size: 13px;
             color: #2d3436;
-            padding-right: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            padding: 6px 12px 6px 0;
+            display: flex;
+            align-items: center;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.3;
         }
         .gantt-task-name a {
             color: #2d3436;
@@ -513,7 +516,8 @@
         }
         .gantt-bar {
             position: absolute;
-            top: 7px;
+            top: 50%;
+            transform: translateY(-50%);
             height: 20px;
             border-radius: 5px;
             color: white;
@@ -537,14 +541,15 @@
             background: #d4380d;
             z-index: 3;
         }
-        .gantt-today::after {
-            content: 'Today';
+        .gantt-today-label {
             position: absolute;
-            top: -16px;
-            left: -16px;
+            top: -18px;
+            transform: translateX(-50%);
             font-size: 10px;
             font-weight: 700;
             color: #d4380d;
+            white-space: nowrap;
+            z-index: 4;
         }
 
         .sprint-controls {
@@ -1701,8 +1706,13 @@
                 cur = next;
             }
             const monthCols = months.map(m => `${(m.span / totalDays * 100).toFixed(4)}%`).join(' ');
+            const today = new Date();
+            const todayInRange = today >= rangeStart && today <= rangeEnd;
             let html = `<div class="gantt-months" style="grid-template-columns:${monthCols};">`;
             html += months.map(m => `<div class="gantt-month">${m.label}</div>`).join('');
+            if (todayInRange) {
+                html += `<div class="gantt-today-label" style="left:${pct(today).toFixed(4)}%;">Today</div>`;
+            }
             html += `</div>`;
 
             // Group rows by quarter column, ordered Q2, Q3, Q4.
@@ -1715,8 +1725,7 @@
                 return `<div class="grid-line" style="left:${(acc / totalDays * 100).toFixed(4)}%;"></div>`;
             }).join('');
 
-            const today = new Date();
-            const todayMarker = (today >= rangeStart && today <= rangeEnd)
+            const todayMarker = todayInRange
                 ? `<div class="gantt-today" style="left:${pct(today).toFixed(4)}%;"></div>` : '';
 
             order.forEach(q => {
