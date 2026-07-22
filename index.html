@@ -422,6 +422,131 @@
             color: #999;
         }
 
+        /* Roadmap Gantt */
+        .gantt-wrap {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+        .gantt-legend {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #555;
+        }
+        .gantt-legend .lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gantt-legend .sw {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .gantt {
+            min-width: 900px;
+        }
+        .gantt-months {
+            display: grid;
+            margin-left: 260px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .gantt-month {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-align: center;
+            padding: 6px 0;
+            border-left: 1px solid #eef1f4;
+        }
+        .gantt-lane-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #032d60;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin: 16px 0 6px 0;
+        }
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            height: 34px;
+        }
+        .gantt-row:hover {
+            background: #f8f9fa;
+        }
+        .gantt-task-name {
+            width: 260px;
+            flex: 0 0 260px;
+            font-size: 13px;
+            color: #2d3436;
+            padding-right: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gantt-task-name a {
+            color: #2d3436;
+            text-decoration: none;
+        }
+        .gantt-task-name a:hover {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        .gantt-track {
+            position: relative;
+            flex: 1;
+            height: 100%;
+        }
+        .gantt-track .grid-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #eef1f4;
+        }
+        .gantt-bar {
+            position: absolute;
+            top: 7px;
+            height: 20px;
+            border-radius: 5px;
+            color: white;
+            font-size: 11px;
+            line-height: 20px;
+            padding: 0 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+            cursor: default;
+        }
+        .gantt-q2 { background: #0066cc; }
+        .gantt-q3 { background: #6f42c1; }
+        .gantt-q4 { background: #2e844a; }
+        .gantt-today {
+            position: absolute;
+            top: -4px;
+            bottom: 0;
+            width: 2px;
+            background: #d4380d;
+            z-index: 3;
+        }
+        .gantt-today::after {
+            content: 'Today';
+            position: absolute;
+            top: -16px;
+            left: -16px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #d4380d;
+        }
+
         .sprint-controls {
             display: flex;
             gap: 10px;
@@ -1092,12 +1217,15 @@
     <div class="roadmap-view" id="roadmapView">
         <div class="po-intro">
             <h2>🛣️ Roadmap</h2>
-            <p>High-level delivery timeline for the DET Testing Expert initiative.</p>
+            <p>High-level delivery timeline for the DET Testing Expert initiative — Gantt view of milestones by quarter.</p>
         </div>
-        <div class="roadmap-placeholder">
-            <div class="roadmap-placeholder-icon">🚧</div>
-            <h3>Roadmap coming soon</h3>
-            <p>This section is a placeholder. Roadmap data will be added here once it's available.</p>
+        <div class="gantt-wrap">
+            <div class="gantt-legend">
+                <span class="lg"><span class="sw gantt-q2"></span> Q2</span>
+                <span class="lg"><span class="sw gantt-q3"></span> Q3</span>
+                <span class="lg"><span class="sw gantt-q4"></span> Q4</span>
+            </div>
+            <div class="gantt" id="ganttChart"></div>
         </div>
     </div>
 
@@ -1516,7 +1644,104 @@
                 renderSprintBoard();
             } else if (view === 'problems') {
                 renderProblemsOutcomes();
+            } else if (view === 'roadmap') {
+                renderRoadmap();
             }
+        }
+
+        // ===== Roadmap Gantt =====
+        const ROADMAP_BASE = 'https://gus.lightning.force.com/lightning/r/RDMP_RoadmapItem__c';
+        const roadmapItems = [
+            { name: 'AI tool selection and discovery', id: 'aIEEE000000R5LN4A0', col: 'Q2', start: '2026-06-14', end: '2026-07-16' },
+            { name: 'Expand Test Case Creation (Stage 1) with applicable skills', id: 'aIEEE000000ReuC4AS', col: 'Q2', start: '2026-06-14', end: '2026-07-16' },
+            { name: 'Deploy Version 1 of Test Expert', id: 'aIEEE000000RCDB4A4', col: 'Q2', start: '2026-06-14', end: '2026-07-16' },
+            { name: 'Create deployment and set up guide', id: 'aIEEE000000R5M', col: 'Q2', start: '2026-06-28', end: '2026-07-23' },
+            { name: 'Validate Stage 1 End to End', id: 'aIEEE000000RCOT4A4', col: 'Q2', start: '2026-07-12', end: '2026-07-23' },
+            { name: 'Finalize business requirements', id: 'aIEEE000000RCJd4AO', col: 'Q3', start: '2026-07-21', end: '2026-08-06' },
+            { name: 'Expand Autonomous Codegen & Self-Repair (Stage 3)', id: 'aIEEE000000ReuE4AS', col: 'Q2', start: '2026-07-26', end: '2026-08-06' },
+            { name: 'Expand Test Execution (Stage 2) with applicable skills', id: 'aIEEE000000ReuF4AS', col: 'Q2', start: '2026-07-26', end: '2026-08-06' },
+            { name: 'Sneak peak Comm to Pilot users', id: 'aIEEE000000RCLF4A4', col: 'Q2', start: '2026-07-28', end: '2026-07-30' },
+            { name: 'Stage 1 (Agentic Test Case Creation) Pilot', id: 'aIEEE000000RCI04AO', col: 'Q2', start: '2026-08-02', end: '2026-09-10' },
+            { name: 'Stage 2 (Agentic Test Case Execution) Pilot', id: 'aIEEE000000RCI24AO', col: 'Q2', start: '2026-08-09', end: '2026-09-10' },
+            { name: 'Business Tester Flow Validation', id: 'aIEEE000000RCMr4AO', col: 'Q3', start: '2026-08-16', end: '2026-09-03' },
+            { name: 'Business Tester Pilot', id: 'aIEEE000000RCI14AO', col: 'Q3', start: '2026-08-23', end: '2026-09-03' },
+            { name: 'Codegen and Self Healing', id: 'aIEEE000000ReuD4AS', col: 'Q2', start: '2026-08-23', end: '2026-09-10' },
+            { name: 'Autonomous Test Health Reporting', id: 'aIEEE000000Revp', col: 'Q3', start: '2026-08-30', end: '2026-09-10' },
+            { name: 'Slack integration', id: 'aIEEE000000RCGP4A4', col: 'Q4', start: '2026-08-30', end: '2026-09-10' },
+            { name: 'Stage 3 (Autonomous Codegen & Self-Repair) Pilot', id: 'aIEEE000000RCI34AO', col: 'Q2', start: '2026-08-30', end: '2026-09-10' },
+            { name: 'Slack UI/ Integration POC', id: 'aIEEE000000Resb4AC', col: 'Q3', start: '2026-09-13', end: '2026-09-24' }
+        ];
+
+        function renderRoadmap() {
+            const chart = document.getElementById('ganttChart');
+            if (!chart) return;
+
+            const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+            const DAY = 86400000;
+
+            // Timeline bounds: pad to month edges around min start / max end.
+            let minD = parse(roadmapItems[0].start), maxD = parse(roadmapItems[0].end);
+            roadmapItems.forEach(it => {
+                const s = parse(it.start), e = parse(it.end);
+                if (s < minD) minD = s;
+                if (e > maxD) maxD = e;
+            });
+            const rangeStart = new Date(minD.getFullYear(), minD.getMonth(), 1);
+            const rangeEnd = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+            const totalDays = Math.round((rangeEnd - rangeStart) / DAY) + 1;
+            const pct = date => ((date - rangeStart) / DAY) / totalDays * 100;
+
+            // Month header cells.
+            const months = [];
+            let cur = new Date(rangeStart);
+            while (cur <= rangeEnd) {
+                const next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+                const span = Math.round((Math.min(next, rangeEnd.getTime() + DAY) - cur) / DAY);
+                months.push({ label: cur.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), span });
+                cur = next;
+            }
+            const monthCols = months.map(m => `${(m.span / totalDays * 100).toFixed(4)}%`).join(' ');
+            let html = `<div class="gantt-months" style="grid-template-columns:${monthCols};">`;
+            html += months.map(m => `<div class="gantt-month">${m.label}</div>`).join('');
+            html += `</div>`;
+
+            // Group rows by quarter column, ordered Q2, Q3, Q4.
+            const order = ['Q2', 'Q3', 'Q4'];
+            const cls = { Q2: 'gantt-q2', Q3: 'gantt-q3', Q4: 'gantt-q4' };
+            // Month grid lines (skip the first edge).
+            let acc = 0;
+            const gridLines = months.slice(0, -1).map(m => {
+                acc += m.span;
+                return `<div class="grid-line" style="left:${(acc / totalDays * 100).toFixed(4)}%;"></div>`;
+            }).join('');
+
+            const today = new Date();
+            const todayMarker = (today >= rangeStart && today <= rangeEnd)
+                ? `<div class="gantt-today" style="left:${pct(today).toFixed(4)}%;"></div>` : '';
+
+            order.forEach(q => {
+                const rows = roadmapItems.filter(it => it.col === q)
+                    .sort((a, b) => parse(a.start) - parse(b.start));
+                if (!rows.length) return;
+                html += `<div class="gantt-lane-label">${q} &middot; ${rows.length} item${rows.length > 1 ? 's' : ''}</div>`;
+                rows.forEach(it => {
+                    const s = parse(it.start), e = parse(it.end);
+                    const left = pct(s);
+                    const width = ((e - s) / DAY + 1) / totalDays * 100;
+                    const range = `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${e.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    html += `<div class="gantt-row">
+                        <div class="gantt-task-name" title="${it.name}">
+                            <a href="${ROADMAP_BASE}/${it.id}/view" target="_blank">${it.name}</a>
+                        </div>
+                        <div class="gantt-track">
+                            ${gridLines}${todayMarker}
+                            <div class="gantt-bar ${cls[it.col]}" style="left:${left.toFixed(4)}%;width:${width.toFixed(4)}%;" title="${it.name} (${range})">${range}</div>
+                        </div>
+                    </div>`;
+                });
+            });
+
+            chart.innerHTML = html;
         }
 
         function renderProblemsOutcomes() {
