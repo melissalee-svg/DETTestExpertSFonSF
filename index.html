@@ -2400,11 +2400,24 @@
                         </select>
                     `;
 
+                    // Assignees — reuse the same store/modal as requirements (keyed by id).
+                    let taskAssigneesHTML = '';
+                    const taskAssignees = assignees[task.id] || [];
+                    if (taskAssignees.length > 0) {
+                        taskAssigneesHTML = `<div class="sprint-card-assignees">` +
+                            taskAssignees.map(name =>
+                                `<span class="assignee-pill" title="${escapeHTML(name)}"><span class="avatar">${escapeHTML(getInitials(name))}</span>${escapeHTML(name)}</span>`
+                            ).join('') +
+                            `</div>`;
+                    }
+
                     card.innerHTML = `
                         <div class="sprint-req-id">${escapeHTML(task.id)} <span class="sprint-card-tag" style="background:#fff3cd;color:#856404;">TASK</span></div>
                         <div class="sprint-req-title">${escapeHTML(task.title)}</div>
+                        ${taskAssigneesHTML}
                         <div class="sprint-card-actions">
                             ${taskStatusHTML}
+                            <button class="mini-btn" onclick="event.stopPropagation(); openAssigneeModal('${task.id}')">+ Assignee</button>
                             <button class="mini-btn danger" onclick="event.stopPropagation(); deleteTask('${task.id}')">Delete</button>
                         </div>
                     `;
