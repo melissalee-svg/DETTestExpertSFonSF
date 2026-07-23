@@ -661,9 +661,66 @@
             background: #2e844a;
             color: #fff;
             vertical-align: middle;
+            cursor: pointer;
+        }
+        .active-badge:hover {
+            background: #236b3b;
+        }
+        .active-badge::after {
+            content: ' ⤢';
         }
         .sprint-column.active-sprint {
             box-shadow: 0 0 0 2px #2e844a, 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Pop-out sprint view */
+        .sprint-modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 720px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .sprint-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .sprint-modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .sprint-modal-sub {
+            font-size: 13px;
+            color: #0066cc;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+        .sprint-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            color: #666;
+            padding: 0 4px;
+        }
+        .sprint-modal-close:hover {
+            color: #1a1a1a;
+        }
+        .sprint-modal-body .sprint-req-card {
+            margin-bottom: 12px;
+        }
+        .sprint-modal-empty {
+            color: #999;
+            font-size: 14px;
+            padding: 20px 0;
+            text-align: center;
         }
 
         .sprint-capacity {
@@ -1329,6 +1386,20 @@
         </div>
     </div>
 
+    <!-- Sprint Pop-out Modal -->
+    <div class="modal" id="sprintModal" onclick="if(event.target===this) closeSprintModal()">
+        <div class="sprint-modal-content">
+            <div class="sprint-modal-header">
+                <div>
+                    <h2 id="sprintModalTitle">Sprint</h2>
+                    <div class="sprint-modal-sub" id="sprintModalSub"></div>
+                </div>
+                <button class="sprint-modal-close" onclick="closeSprintModal()" title="Close">&times;</button>
+            </div>
+            <div class="sprint-modal-body" id="sprintModalBody"></div>
+        </div>
+    </div>
+
     <script>
         // All Requirements Data
         const requirements = [
@@ -1636,6 +1707,8 @@
                     badge.className = 'active-badge';
                     badge.id = `active-${sprintId}`;
                     badge.textContent = 'Active';
+                    badge.title = 'Expand this sprint';
+                    badge.onclick = function(e) { e.stopPropagation(); openSprintModal(sprintId); };
                     titleEl.appendChild(badge);
                 } else if (!active && badge) {
                     badge.parentNode.removeChild(badge);
@@ -2291,6 +2364,7 @@
 
         function renderSprintBoard() {
             renderSprintDates();
+            if (openSprintModalId) renderSprintModalBody(); // keep pop-out in sync
             const sprints = ['backlog', 'sprint-1', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7', 'sprint-8', 'sprint-9', 'sprint-10'];
             const searchTerm = document.getElementById('boardSearchInput')?.value?.toLowerCase().trim();
 
@@ -2341,136 +2415,178 @@
                     }
                 }
 
-                reqs.forEach(req => {
-                    const card = document.createElement('div');
-                    card.className = 'sprint-req-card';
-                    card.draggable = true;
-                    card.dataset.reqId = req.id;
-                    card.ondragstart = drag;
-                    card.ondragend = function() { this.classList.remove('dragging'); };
-
-                    const currentPoints = customStoryPoints[req.id] !== undefined ? customStoryPoints[req.id] : req.storyPoints;
-                    const currentPriority = priorityRanking[req.id] || '';
-                    const currentStatus = requirementStatus[req.id] || 'not-started';
-                    const isNorthStar = req.id.startsWith('REQ-NS') || req.id.startsWith('REQ-NFR') || req.priority === 'north-star';
-
-                    const reqIdDisplay = isNorthStar ?
-                        `<div class="sprint-req-id">${req.id} <span class="badge north-star" style="font-size: 9px; padding: 1px 4px;">⭐ NS</span></div>` :
-                        `<div class="sprint-req-id">${req.id}</div>`;
-
-                    // Build tags HTML
-                    let tagsHTML = `<div class="sprint-card-tags">`;
-
-                    // Stage badge
-                    const stageBadgeColors = {
-                        'stage-1': { bg: '#d1ecf1', text: '#0c5460' },
-                        'stage-2': { bg: '#d4edda', text: '#155724' },
-                        'stage-3': { bg: '#e2d9f3', text: '#4b2e83' },
-                        'nfr': { bg: '#fff3cd', text: '#856404' }
-                    };
-                    const stageColor = stageBadgeColors[req.stage] || { bg: '#e9ecef', text: '#495057' };
-                    tagsHTML += `<span class="sprint-card-tag" style="background: ${stageColor.bg}; color: ${stageColor.text};">${req.stage.toUpperCase().replace('-', ' ')}</span>`;
-
-                    // Custom tags
-                    if (customTags[req.id]) {
-                        customTags[req.id].forEach(tag => {
-                            const color = getTagColor(tag);
-                            tagsHTML += `<span class="sprint-card-tag" style="background: ${color.bg}; color: ${color.text};">${tag}</span>`;
-                        });
-                    }
-
-                    tagsHTML += `</div>`;
-
-                    // Assignees
-                    let assigneesHTML = '';
-                    const cardAssignees = assignees[req.id] || [];
-                    if (cardAssignees.length > 0) {
-                        assigneesHTML = `<div class="sprint-card-assignees">` +
-                            cardAssignees.map(name =>
-                                `<span class="assignee-pill" title="${escapeHTML(name)}"><span class="avatar">${escapeHTML(getInitials(name))}</span>${escapeHTML(name)}</span>`
-                            ).join('') +
-                            `</div>`;
-                    }
-
-                    // Status dropdown
-                    const statusHTML = `
-                        <select class="status-select" onchange="updateStatus('${req.id}', this.value)" onclick="event.stopPropagation()">
-                            <option value="not-started" ${currentStatus === 'not-started' ? 'selected' : ''}>Not Started</option>
-                            <option value="in-progress" ${currentStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                            <option value="in-testing" ${currentStatus === 'in-testing' ? 'selected' : ''}>In Testing</option>
-                            <option value="blocked" ${currentStatus === 'blocked' ? 'selected' : ''}>Blocked</option>
-                            <option value="deferred" ${currentStatus === 'deferred' ? 'selected' : ''}>Deferred</option>
-                            <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completed</option>
-                        </select>
-                    `;
-
-                    // Action buttons
-                    const actionsHTML = `
-                        <div class="sprint-card-actions">
-                            ${statusHTML}
-                            <button class="mini-btn" onclick="event.stopPropagation(); openTagModal('${req.id}')">+ Tag</button>
-                            <button class="mini-btn" onclick="event.stopPropagation(); openAssigneeModal('${req.id}')">+ Assignee</button>
-                        </div>
-                    `;
-
-                    card.innerHTML = `
-                        ${reqIdDisplay}
-                        <div class="sprint-req-title">${req.title}</div>
-                        <div class="sprint-req-story">${req.story}</div>
-                        ${tagsHTML}
-                        ${assigneesHTML}
-                        ${actionsHTML}
-                    `;
-
-                    container.appendChild(card);
-                });
+                reqs.forEach(req => container.appendChild(buildReqCard(req)));
 
                 // Render standalone task cards for this column.
-                filteredTasks.forEach(task => {
-                    const card = document.createElement('div');
-                    card.className = 'sprint-req-card task-card';
-                    card.draggable = true;
-                    card.dataset.reqId = task.id;
-                    card.ondragstart = drag;
-                    card.ondragend = function() { this.classList.remove('dragging'); };
-
-                    const st = task.status || 'not-started';
-                    const taskStatusHTML = `
-                        <select class="status-select" onchange="updateTaskStatus('${task.id}', this.value)" onclick="event.stopPropagation()">
-                            <option value="not-started" ${st === 'not-started' ? 'selected' : ''}>Not Started</option>
-                            <option value="in-progress" ${st === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                            <option value="in-testing" ${st === 'in-testing' ? 'selected' : ''}>In Testing</option>
-                            <option value="blocked" ${st === 'blocked' ? 'selected' : ''}>Blocked</option>
-                            <option value="deferred" ${st === 'deferred' ? 'selected' : ''}>Deferred</option>
-                            <option value="completed" ${st === 'completed' ? 'selected' : ''}>Completed</option>
-                        </select>
-                    `;
-
-                    // Assignees — reuse the same store/modal as requirements (keyed by id).
-                    let taskAssigneesHTML = '';
-                    const taskAssignees = assignees[task.id] || [];
-                    if (taskAssignees.length > 0) {
-                        taskAssigneesHTML = `<div class="sprint-card-assignees">` +
-                            taskAssignees.map(name =>
-                                `<span class="assignee-pill" title="${escapeHTML(name)}"><span class="avatar">${escapeHTML(getInitials(name))}</span>${escapeHTML(name)}</span>`
-                            ).join('') +
-                            `</div>`;
-                    }
-
-                    card.innerHTML = `
-                        <div class="sprint-req-id">${escapeHTML(task.id)} <span class="sprint-card-tag" style="background:#fff3cd;color:#856404;">TASK</span></div>
-                        <div class="sprint-req-title">${escapeHTML(task.title)}</div>
-                        ${taskAssigneesHTML}
-                        <div class="sprint-card-actions">
-                            ${taskStatusHTML}
-                            <button class="mini-btn" onclick="event.stopPropagation(); openAssigneeModal('${task.id}')">+ Assignee</button>
-                            <button class="mini-btn danger" onclick="event.stopPropagation(); deleteTask('${task.id}')">Delete</button>
-                        </div>
-                    `;
-
-                    container.appendChild(card);
-                });
+                filteredTasks.forEach(task => container.appendChild(buildTaskCard(task)));
             });
+        }
+
+        // Build a requirement card element (shared by the board and the pop-out view).
+        function buildReqCard(req) {
+            const card = document.createElement('div');
+            card.className = 'sprint-req-card';
+            card.draggable = true;
+            card.dataset.reqId = req.id;
+            card.ondragstart = drag;
+            card.ondragend = function() { this.classList.remove('dragging'); };
+
+            const currentStatus = requirementStatus[req.id] || 'not-started';
+            const isNorthStar = req.id.startsWith('REQ-NS') || req.id.startsWith('REQ-NFR') || req.priority === 'north-star';
+
+            const reqIdDisplay = isNorthStar ?
+                `<div class="sprint-req-id">${req.id} <span class="badge north-star" style="font-size: 9px; padding: 1px 4px;">⭐ NS</span></div>` :
+                `<div class="sprint-req-id">${req.id}</div>`;
+
+            // Build tags HTML
+            let tagsHTML = `<div class="sprint-card-tags">`;
+
+            // Stage badge
+            const stageBadgeColors = {
+                'stage-1': { bg: '#d1ecf1', text: '#0c5460' },
+                'stage-2': { bg: '#d4edda', text: '#155724' },
+                'stage-3': { bg: '#e2d9f3', text: '#4b2e83' },
+                'nfr': { bg: '#fff3cd', text: '#856404' }
+            };
+            const stageColor = stageBadgeColors[req.stage] || { bg: '#e9ecef', text: '#495057' };
+            tagsHTML += `<span class="sprint-card-tag" style="background: ${stageColor.bg}; color: ${stageColor.text};">${req.stage.toUpperCase().replace('-', ' ')}</span>`;
+
+            // Custom tags
+            if (customTags[req.id]) {
+                customTags[req.id].forEach(tag => {
+                    const color = getTagColor(tag);
+                    tagsHTML += `<span class="sprint-card-tag" style="background: ${color.bg}; color: ${color.text};">${tag}</span>`;
+                });
+            }
+
+            tagsHTML += `</div>`;
+
+            // Assignees
+            let assigneesHTML = '';
+            const cardAssignees = assignees[req.id] || [];
+            if (cardAssignees.length > 0) {
+                assigneesHTML = `<div class="sprint-card-assignees">` +
+                    cardAssignees.map(name =>
+                        `<span class="assignee-pill" title="${escapeHTML(name)}"><span class="avatar">${escapeHTML(getInitials(name))}</span>${escapeHTML(name)}</span>`
+                    ).join('') +
+                    `</div>`;
+            }
+
+            // Status dropdown
+            const statusHTML = `
+                <select class="status-select" onchange="updateStatus('${req.id}', this.value)" onclick="event.stopPropagation()">
+                    <option value="not-started" ${currentStatus === 'not-started' ? 'selected' : ''}>Not Started</option>
+                    <option value="in-progress" ${currentStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="in-testing" ${currentStatus === 'in-testing' ? 'selected' : ''}>In Testing</option>
+                    <option value="blocked" ${currentStatus === 'blocked' ? 'selected' : ''}>Blocked</option>
+                    <option value="deferred" ${currentStatus === 'deferred' ? 'selected' : ''}>Deferred</option>
+                    <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completed</option>
+                </select>
+            `;
+
+            // Action buttons
+            const actionsHTML = `
+                <div class="sprint-card-actions">
+                    ${statusHTML}
+                    <button class="mini-btn" onclick="event.stopPropagation(); openTagModal('${req.id}')">+ Tag</button>
+                    <button class="mini-btn" onclick="event.stopPropagation(); openAssigneeModal('${req.id}')">+ Assignee</button>
+                </div>
+            `;
+
+            card.innerHTML = `
+                ${reqIdDisplay}
+                <div class="sprint-req-title">${req.title}</div>
+                <div class="sprint-req-story">${req.story}</div>
+                ${tagsHTML}
+                ${assigneesHTML}
+                ${actionsHTML}
+            `;
+
+            return card;
+        }
+
+        // Build a standalone-task card element (shared by the board and the pop-out view).
+        function buildTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'sprint-req-card task-card';
+            card.draggable = true;
+            card.dataset.reqId = task.id;
+            card.ondragstart = drag;
+            card.ondragend = function() { this.classList.remove('dragging'); };
+
+            const st = task.status || 'not-started';
+            const taskStatusHTML = `
+                <select class="status-select" onchange="updateTaskStatus('${task.id}', this.value)" onclick="event.stopPropagation()">
+                    <option value="not-started" ${st === 'not-started' ? 'selected' : ''}>Not Started</option>
+                    <option value="in-progress" ${st === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="in-testing" ${st === 'in-testing' ? 'selected' : ''}>In Testing</option>
+                    <option value="blocked" ${st === 'blocked' ? 'selected' : ''}>Blocked</option>
+                    <option value="deferred" ${st === 'deferred' ? 'selected' : ''}>Deferred</option>
+                    <option value="completed" ${st === 'completed' ? 'selected' : ''}>Completed</option>
+                </select>
+            `;
+
+            // Assignees — reuse the same store/modal as requirements (keyed by id).
+            let taskAssigneesHTML = '';
+            const taskAssignees = assignees[task.id] || [];
+            if (taskAssignees.length > 0) {
+                taskAssigneesHTML = `<div class="sprint-card-assignees">` +
+                    taskAssignees.map(name =>
+                        `<span class="assignee-pill" title="${escapeHTML(name)}"><span class="avatar">${escapeHTML(getInitials(name))}</span>${escapeHTML(name)}</span>`
+                    ).join('') +
+                    `</div>`;
+            }
+
+            card.innerHTML = `
+                <div class="sprint-req-id">${escapeHTML(task.id)} <span class="sprint-card-tag" style="background:#fff3cd;color:#856404;">TASK</span></div>
+                <div class="sprint-req-title">${escapeHTML(task.title)}</div>
+                ${taskAssigneesHTML}
+                <div class="sprint-card-actions">
+                    ${taskStatusHTML}
+                    <button class="mini-btn" onclick="event.stopPropagation(); openAssigneeModal('${task.id}')">+ Assignee</button>
+                    <button class="mini-btn danger" onclick="event.stopPropagation(); deleteTask('${task.id}')">Delete</button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // ---- Pop-out sprint view ----
+        let openSprintModalId = null; // which sprint is currently popped out (for live refresh)
+
+        function openSprintModal(sprintId) {
+            openSprintModalId = sprintId;
+            const sprintNum = sprintId.replace('sprint-', '');
+            document.getElementById('sprintModalTitle').textContent = `Sprint ${sprintNum}`;
+            const range = sprintDates[sprintId];
+            document.getElementById('sprintModalSub').textContent = range
+                ? `${formatSprintDate(range[0])} – ${formatSprintDate(range[1])}`
+                : '';
+            renderSprintModalBody();
+            document.getElementById('sprintModal').classList.add('active');
+        }
+
+        function renderSprintModalBody() {
+            if (!openSprintModalId) return;
+            const body = document.getElementById('sprintModalBody');
+            body.innerHTML = '';
+            const sprintId = openSprintModalId;
+            const reqs = requirements.filter(r => sprintAssignments[r.id] === sprintId);
+            const sprintTasks = tasks.filter(t => t.sprint === sprintId);
+            if (reqs.length === 0 && sprintTasks.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'sprint-modal-empty';
+                empty.textContent = 'No requirements or tasks in this sprint yet.';
+                body.appendChild(empty);
+                return;
+            }
+            reqs.forEach(req => body.appendChild(buildReqCard(req)));
+            sprintTasks.forEach(task => body.appendChild(buildTaskCard(task)));
+        }
+
+        function closeSprintModal() {
+            document.getElementById('sprintModal').classList.remove('active');
+            openSprintModalId = null;
         }
 
         function clearAllSprints() {
