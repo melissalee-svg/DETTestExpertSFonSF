@@ -649,6 +649,23 @@
             margin-top: 3px;
         }
 
+        .active-badge {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #2e844a;
+            color: #fff;
+            vertical-align: middle;
+        }
+        .sprint-column.active-sprint {
+            box-shadow: 0 0 0 2px #2e844a, 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         .sprint-capacity {
             font-size: 11px;
             color: #666;
@@ -1579,12 +1596,26 @@
             return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         }
 
-        // Inject the date range under each sprint title in the board header.
+        // Midnight-normalized date from an ISO string (avoids time-of-day edge cases).
+        function dayFromISO(iso) {
+            const [y, m, d] = iso.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        // True if today falls within [start, end] inclusive.
+        function isActiveSprint(startISO, endISO) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return today >= dayFromISO(startISO) && today <= dayFromISO(endISO);
+        }
+
+        // Inject the date range under each sprint title, and flag the active sprint(s).
         function renderSprintDates() {
             Object.keys(sprintDates).forEach(sprintId => {
                 const capacityEl = document.getElementById(`capacity-${sprintId}`);
                 if (!capacityEl) return;
-                const header = capacityEl.parentNode;
+                const header = capacityEl.parentNode;        // wrapper div holding title + dates + capacity
+                const titleEl = header.children[0];          // the "Sprint N" title div
                 let datesEl = document.getElementById(`dates-${sprintId}`);
                 if (!datesEl) {
                     datesEl = document.createElement('div');
@@ -1594,6 +1625,21 @@
                 }
                 const [start, end] = sprintDates[sprintId];
                 datesEl.textContent = `${formatSprintDate(start)} – ${formatSprintDate(end)}`;
+
+                // Active indicator: badge next to the name + ring on the column.
+                const active = isActiveSprint(start, end);
+                const column = document.querySelector(`.sprint-column[data-sprint="${sprintId}"]`);
+                if (column) column.classList[active ? 'add' : 'remove']('active-sprint');
+                let badge = document.getElementById(`active-${sprintId}`);
+                if (active && !badge && titleEl) {
+                    badge = document.createElement('span');
+                    badge.className = 'active-badge';
+                    badge.id = `active-${sprintId}`;
+                    badge.textContent = 'Active';
+                    titleEl.appendChild(badge);
+                } else if (!active && badge) {
+                    badge.parentNode.removeChild(badge);
+                }
             });
         }
 
