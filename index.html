@@ -770,6 +770,35 @@
             color: #0066cc;
         }
 
+        .mini-btn.danger:hover {
+            border-color: #d4380d;
+            color: #d4380d;
+        }
+
+        /* Standalone task cards (user-created, not requirements) */
+        .add-task-btn {
+            width: 100%;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 6px;
+            margin-bottom: 8px;
+            border: 1px dashed #b8860b;
+            background: #fffbf0;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #b8860b;
+        }
+        .add-task-btn:hover {
+            background: #fff3cd;
+            border-style: solid;
+        }
+        .sprint-req-card.task-card {
+            border-left: 3px solid #f8b739;
+        }
+        .task-card .sprint-req-id {
+            color: #b8860b;
+        }
+
         .status-select {
             font-size: 10px;
             padding: 3px 6px;
@@ -1513,6 +1542,8 @@
         let customStoryPoints = {}; // {reqId: points}
         let priorityRanking = {}; // {reqId: number 1-60}
         let requirementStatus = {}; // {reqId: status}
+        let tasks = []; // [{id: 'TASK-1', title, sprint, status}] — standalone user-created tasks
+        let taskCounter = 0; // last-used TASK number; next task is taskCounter + 1
 
         // Initialize sprint capacity with defaults
         for (let i = 1; i <= 10; i++) {
@@ -1575,6 +1606,8 @@
             const savedPriority = localStorage.getItem('priorityRanking');
             const savedStatus = localStorage.getItem('requirementStatus');
             const savedAssignees = localStorage.getItem('assignees');
+            const savedTasks = localStorage.getItem('tasks');
+            const savedTaskCounter = localStorage.getItem('taskCounter');
 
             if (savedTags) customTags = JSON.parse(savedTags);
             if (savedTeams) teamAssignments = JSON.parse(savedTeams);
@@ -1584,6 +1617,13 @@
             if (savedPriority) priorityRanking = JSON.parse(savedPriority);
             if (savedStatus) requirementStatus = JSON.parse(savedStatus);
             if (savedAssignees) assignees = JSON.parse(savedAssignees);
+            if (savedTasks) tasks = JSON.parse(savedTasks);
+            if (savedTaskCounter) taskCounter = JSON.parse(savedTaskCounter);
+            // Self-heal the counter so new tasks never collide with existing IDs.
+            tasks.forEach(t => {
+                const n = parseInt(String(t.id).replace(/\D/g, ''), 10);
+                if (!isNaN(n) && n > taskCounter) taskCounter = n;
+            });
 
             // Union-merge the Google Sheet's column-E tags into customTags.
             // Never overrides tags the user added by hand; idempotent (no dupes).
@@ -1605,6 +1645,8 @@
             localStorage.setItem('priorityRanking', JSON.stringify(priorityRanking));
             localStorage.setItem('requirementStatus', JSON.stringify(requirementStatus));
             localStorage.setItem('assignees', JSON.stringify(assignees));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            localStorage.setItem('taskCounter', JSON.stringify(taskCounter));
         }
 
         // Initials for an assignee avatar, e.g. "Melissa Lee" -> "ML".
@@ -2110,9 +2152,48 @@
             const reqId = ev.dataTransfer.getData("reqId");
             const sprintId = ev.currentTarget.dataset.sprint;
 
-            sprintAssignments[reqId] = sprintId;
+            // Tasks are stored inline (with their own sprint field); requirements use sprintAssignments.
+            const task = tasks.find(t => t.id === reqId);
+            if (task) {
+                task.sprint = sprintId;
+            } else {
+                sprintAssignments[reqId] = sprintId;
+            }
             saveToLocalStorage();
             renderSprintBoard();
+        }
+
+        // Add a standalone task (not a requirement) to a sprint/backlog column.
+        function addTask(sprintId) {
+            const title = prompt('Task title:');
+            if (title === null) return; // cancelled
+            const trimmed = title.trim();
+            if (!trimmed) return; // empty — do nothing
+            taskCounter++;
+            tasks.push({
+                id: `TASK-${taskCounter}`,
+                title: trimmed,
+                sprint: sprintId,
+                status: 'not-started'
+            });
+            saveToLocalStorage();
+            renderSprintBoard();
+        }
+
+        function deleteTask(taskId) {
+            if (!confirm(`Delete ${taskId}?`)) return;
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveToLocalStorage();
+            renderSprintBoard();
+        }
+
+        function updateTaskStatus(taskId, status) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = status;
+                saveToLocalStorage();
+                renderSprintBoard();
+            }
         }
 
         function renderSprintBoard() {
@@ -2123,16 +2204,31 @@
                 const container = document.getElementById(`sprint-${sprint}`);
                 container.innerHTML = '';
 
+                // "+ Task" button — lets the user add a standalone task to this column.
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-task-btn';
+                addBtn.textContent = '+ Task';
+                addBtn.onclick = function() { addTask(sprint); };
+                container.appendChild(addBtn);
+
                 // For backlog, include unassigned requirements
                 const assignedReqs = sprint === 'backlog'
                     ? requirements.filter(r => !sprintAssignments[r.id] || sprintAssignments[r.id] === 'backlog')
                     : requirements.filter(r => sprintAssignments[r.id] === sprint);
 
+                // Standalone tasks assigned to this column.
+                const sprintTasks = tasks.filter(t => t.sprint === sprint);
+                const matchesTask = t => {
+                    if (!searchTerm) return true;
+                    return (t.id + ' ' + t.title).toLowerCase().includes(searchTerm);
+                };
+                const filteredTasks = sprintTasks.filter(matchesTask);
+
                 // Apply the same search filter as the Requirements List
                 const reqs = searchTerm
                     ? assignedReqs.filter(r => matchesSearch(r, searchTerm))
                     : assignedReqs;
-                const count = reqs.length;
+                const count = reqs.length + filteredTasks.length;
                 const totalPoints = reqs.reduce((sum, r) => {
                     const points = customStoryPoints[r.id] !== undefined ? customStoryPoints[r.id] : r.storyPoints;
                     return sum + (points || 0);
@@ -2230,6 +2326,39 @@
                         ${tagsHTML}
                         ${assigneesHTML}
                         ${actionsHTML}
+                    `;
+
+                    container.appendChild(card);
+                });
+
+                // Render standalone task cards for this column.
+                filteredTasks.forEach(task => {
+                    const card = document.createElement('div');
+                    card.className = 'sprint-req-card task-card';
+                    card.draggable = true;
+                    card.dataset.reqId = task.id;
+                    card.ondragstart = drag;
+                    card.ondragend = function() { this.classList.remove('dragging'); };
+
+                    const st = task.status || 'not-started';
+                    const taskStatusHTML = `
+                        <select class="status-select" onchange="updateTaskStatus('${task.id}', this.value)" onclick="event.stopPropagation()">
+                            <option value="not-started" ${st === 'not-started' ? 'selected' : ''}>Not Started</option>
+                            <option value="in-progress" ${st === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="in-testing" ${st === 'in-testing' ? 'selected' : ''}>In Testing</option>
+                            <option value="blocked" ${st === 'blocked' ? 'selected' : ''}>Blocked</option>
+                            <option value="deferred" ${st === 'deferred' ? 'selected' : ''}>Deferred</option>
+                            <option value="completed" ${st === 'completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    `;
+
+                    card.innerHTML = `
+                        <div class="sprint-req-id">${escapeHTML(task.id)} <span class="sprint-card-tag" style="background:#fff3cd;color:#856404;">TASK</span></div>
+                        <div class="sprint-req-title">${escapeHTML(task.title)}</div>
+                        <div class="sprint-card-actions">
+                            ${taskStatusHTML}
+                            <button class="mini-btn danger" onclick="event.stopPropagation(); deleteTask('${task.id}')">Delete</button>
+                        </div>
                     `;
 
                     container.appendChild(card);
