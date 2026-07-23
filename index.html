@@ -642,6 +642,13 @@
             border-radius: 10px;
         }
 
+        .sprint-dates {
+            font-size: 11px;
+            font-weight: 500;
+            color: #0066cc;
+            margin-top: 3px;
+        }
+
         .sprint-capacity {
             font-size: 11px;
             color: #666;
@@ -1550,6 +1557,46 @@
             sprintCapacity[`sprint-${i}`] = 15;
         }
 
+        // Sprint date ranges (from the QUATS working canvas), chronological order.
+        // [startISO, endISO] — rendered as "Wed, Jun 10 – Fri, Jun 26".
+        const sprintDates = {
+            'sprint-1':  ['2026-06-10', '2026-06-26'],
+            'sprint-2':  ['2026-06-15', '2026-06-26'],
+            'sprint-3':  ['2026-06-29', '2026-07-15'],
+            'sprint-4':  ['2026-07-20', '2026-07-31'],
+            'sprint-5':  ['2026-08-03', '2026-08-14'],
+            'sprint-6':  ['2026-08-17', '2026-08-28'],
+            'sprint-7':  ['2026-08-31', '2026-09-11'],
+            'sprint-8':  ['2026-09-14', '2026-09-25'],
+            'sprint-9':  ['2026-09-28', '2026-10-09'],
+            'sprint-10': ['2026-10-12', '2026-10-23']
+        };
+
+        // Format an ISO date as "Wed, Jun 10" (weekday, month, day).
+        function formatSprintDate(iso) {
+            const [y, m, d] = iso.split('-').map(Number);
+            const dt = new Date(y, m - 1, d);
+            return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
+        // Inject the date range under each sprint title in the board header.
+        function renderSprintDates() {
+            Object.keys(sprintDates).forEach(sprintId => {
+                const capacityEl = document.getElementById(`capacity-${sprintId}`);
+                if (!capacityEl) return;
+                const header = capacityEl.parentNode;
+                let datesEl = document.getElementById(`dates-${sprintId}`);
+                if (!datesEl) {
+                    datesEl = document.createElement('div');
+                    datesEl.className = 'sprint-dates';
+                    datesEl.id = `dates-${sprintId}`;
+                    header.insertBefore(datesEl, capacityEl); // between title and capacity
+                }
+                const [start, end] = sprintDates[sprintId];
+                datesEl.textContent = `${formatSprintDate(start)} – ${formatSprintDate(end)}`;
+            });
+        }
+
         // Generate consistent color for a tag based on its name
         function getTagColor(tagName) {
             // Explicit overrides for specific tags (takes priority over the hash).
@@ -2197,6 +2244,7 @@
         }
 
         function renderSprintBoard() {
+            renderSprintDates();
             const sprints = ['backlog', 'sprint-1', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7', 'sprint-8', 'sprint-9', 'sprint-10'];
             const searchTerm = document.getElementById('boardSearchInput')?.value?.toLowerCase().trim();
 
