@@ -1770,22 +1770,33 @@
 
         // Load from localStorage on startup
         window.onload = function() {
-            loadFromLocalStorage();
-            renderRequirementsList();     // pre-populate list so it's ready when selected
-            switchView('problems');       // land on Problems & Outcomes by default
+            // Each step is isolated so a failure in one (e.g. localStorage blocked
+            // in a sandboxed host) can never stop the app from rendering.
+            try { loadFromLocalStorage(); } catch (e) { console.warn('Load skipped:', e); }
+            try { renderRequirementsList(); } catch (e) { console.warn('List render failed:', e); }  // pre-populate list so it's ready when selected
+            try { switchView('problems'); } catch (e) { console.warn('View switch failed:', e); }      // land on Problems & Outcomes by default
         };
 
+        // Safe wrappers: some hosts serve uploaded bundles in a sandbox where
+        // localStorage access throws a SecurityError. Treat storage as optional.
+        function safeGetItem(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+        function safeSetItem(key, value) {
+            try { localStorage.setItem(key, value); } catch (e) { /* storage unavailable — ignore */ }
+        }
+
         function loadFromLocalStorage() {
-            const savedTags = localStorage.getItem('customTags');
-            const savedTeams = localStorage.getItem('teamAssignments');
-            const savedSprints = localStorage.getItem('sprintAssignments');
-            const savedCapacity = localStorage.getItem('sprintCapacity');
-            const savedPoints = localStorage.getItem('customStoryPoints');
-            const savedPriority = localStorage.getItem('priorityRanking');
-            const savedStatus = localStorage.getItem('requirementStatus');
-            const savedAssignees = localStorage.getItem('assignees');
-            const savedTasks = localStorage.getItem('tasks');
-            const savedTaskCounter = localStorage.getItem('taskCounter');
+            const savedTags = safeGetItem('customTags');
+            const savedTeams = safeGetItem('teamAssignments');
+            const savedSprints = safeGetItem('sprintAssignments');
+            const savedCapacity = safeGetItem('sprintCapacity');
+            const savedPoints = safeGetItem('customStoryPoints');
+            const savedPriority = safeGetItem('priorityRanking');
+            const savedStatus = safeGetItem('requirementStatus');
+            const savedAssignees = safeGetItem('assignees');
+            const savedTasks = safeGetItem('tasks');
+            const savedTaskCounter = safeGetItem('taskCounter');
 
             if (savedTags) customTags = JSON.parse(savedTags);
             if (savedTeams) teamAssignments = JSON.parse(savedTeams);
@@ -1815,16 +1826,16 @@
         }
 
         function saveToLocalStorage() {
-            localStorage.setItem('customTags', JSON.stringify(customTags));
-            localStorage.setItem('teamAssignments', JSON.stringify(teamAssignments));
-            localStorage.setItem('sprintAssignments', JSON.stringify(sprintAssignments));
-            localStorage.setItem('sprintCapacity', JSON.stringify(sprintCapacity));
-            localStorage.setItem('customStoryPoints', JSON.stringify(customStoryPoints));
-            localStorage.setItem('priorityRanking', JSON.stringify(priorityRanking));
-            localStorage.setItem('requirementStatus', JSON.stringify(requirementStatus));
-            localStorage.setItem('assignees', JSON.stringify(assignees));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            localStorage.setItem('taskCounter', JSON.stringify(taskCounter));
+            safeSetItem('customTags', JSON.stringify(customTags));
+            safeSetItem('teamAssignments', JSON.stringify(teamAssignments));
+            safeSetItem('sprintAssignments', JSON.stringify(sprintAssignments));
+            safeSetItem('sprintCapacity', JSON.stringify(sprintCapacity));
+            safeSetItem('customStoryPoints', JSON.stringify(customStoryPoints));
+            safeSetItem('priorityRanking', JSON.stringify(priorityRanking));
+            safeSetItem('requirementStatus', JSON.stringify(requirementStatus));
+            safeSetItem('assignees', JSON.stringify(assignees));
+            safeSetItem('tasks', JSON.stringify(tasks));
+            safeSetItem('taskCounter', JSON.stringify(taskCounter));
         }
 
         // Initials for an assignee avatar, e.g. "Melissa Lee" -> "ML".
@@ -2656,7 +2667,7 @@
             requirements.forEach(req => {
                 const sprint = sprintAssignments[req.id] || 'Unassigned';
                 const people = (assignees[req.id] || []).join('; ');
-                const priority = customPriorities[req.id] || req.priority;
+                const priority = priorityRanking[req.id] || req.priority;
                 const points = customStoryPoints[req.id] !== undefined ? customStoryPoints[req.id] : req.storyPoints;
                 const tags = (customTags[req.id] || []).join('; ');
                 csv += `"${req.id}","${req.title}","${req.stage}","${priority}","${sprint}","${people}","${points}","${tags}"\n`;
@@ -2680,8 +2691,11 @@
                 assignees: assignees,
                 sprintAssignments: sprintAssignments,
                 sprintCapacity: sprintCapacity,
-                customPriorities: customPriorities,
+                priorityRanking: priorityRanking,
                 customStoryPoints: customStoryPoints,
+                requirementStatus: requirementStatus,
+                tasks: tasks,
+                taskCounter: taskCounter,
                 exportDate: new Date().toISOString()
             };
 
@@ -2714,8 +2728,17 @@
                         assignees = data.assignees || {};
                         sprintAssignments = data.sprintAssignments || {};
                         sprintCapacity = data.sprintCapacity || {};
-                        customPriorities = data.customPriorities || {};
+                        // Accept both the current key and the legacy "customPriorities" name.
+                        priorityRanking = data.priorityRanking || data.customPriorities || {};
                         customStoryPoints = data.customStoryPoints || {};
+                        requirementStatus = data.requirementStatus || {};
+                        tasks = data.tasks || [];
+                        taskCounter = data.taskCounter || 0;
+                        // Self-heal the counter so new tasks never collide with imported IDs.
+                        tasks.forEach(t => {
+                            const n = parseInt(String(t.id).replace(/\D/g, ''), 10);
+                            if (!isNaN(n) && n > taskCounter) taskCounter = n;
+                        });
                         saveToLocalStorage();
                         renderRequirementsList();
                         renderSprintBoard();
